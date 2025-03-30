@@ -6,6 +6,7 @@
 * Enhances Top Title sections
 * Better multi-columns lists responsiveness
 * Enhanced Details Popup (Tooltips on fields + colors)
+* Highlights filter-title, on filter used
 * Fixes Labels sometimes shown after icons
 * Adds Boot logo animation
 * Better cursors on hover

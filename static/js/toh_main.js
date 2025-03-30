@@ -1689,13 +1689,18 @@ $(document).ready(function () {
 		var $but_clear_filt	=$('.toh-but-clearfilters');
 		var $but_clear_head	=$('.toh-but-clearheaderfilters');
 		var $but_clear_all	=$('.toh-but-clearallfilters');
+
+		var $div_filters_title	=$('#toh-filters-title');
+
 		// filters
 		var cur_filters		=tabuTable.getFilters();
 		if(cur_filters.length==0){
 			$but_clear_filt.hide();
+			$div_filters_title.removeClass('active');
 		}
 		else{
 			$but_clear_filt.show();
+			$div_filters_title.removeClass('active').addClass('active');
 		}
 		// header filters
 		var cur_headfilters	=tabuTable.getHeaderFilters();
