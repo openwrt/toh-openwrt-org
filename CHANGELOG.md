@@ -6,6 +6,7 @@
 * Enhances Top Title sections
 * Better multi-columns lists responsiveness
 * Enhanced Details Popup (Tooltips on fields + colors)
+* Fixes Labels sometimes shown after icons
 * Adds Boot logo animation
 * Better cursors on hover
 * Github Release: fix contributors list

@@ -2012,9 +2012,10 @@ function CellPopupModel(e, cell, onRendered) {
 			var value = data[field];
 			var formatter = (columnMap[field] || { getDefinition: () => col }).getDefinition().formatter || ((cell) => cell.getValue());
 
-			if(col.formatterParams){
-				col.formatterParams.label = col.formatterParams.ttip;
-				col.formatterParams.short =true;
+			var mycol=col;
+			if(mycol.formatterParams){
+				mycol.formatterParams.label = mycol.formatterParams.ttip;
+				mycol.formatterParams.short =true;
 			}	
 
 			// Apply formatter (assumes custom formatters; built-ins need lookupFormatter)
@@ -2025,7 +2026,7 @@ function CellPopupModel(e, cell, onRendered) {
 					getRow: () => cell.getRow(),
 					getColumn: () => columnMap[field],
 					getElement: () => document.createElement("div")
-				}, col.formatterParams) :
+				}, mycol.formatterParams) :
 				value;
 
 			// Convert to string, skip if empty or null
