@@ -747,9 +747,7 @@ body,
 	display: inline-block;
 	margin-right: 6px;
 }
-.toh-filter-title A:hover{
-	cursor: help;
-}
+
 .toh-filter-description{
 	color: #999;
 	font-size: 12px;
@@ -770,7 +768,9 @@ body,
 #toh-filters-features .toh-filter-title A{
 	display: inline-block;
 }
-
+#toh-filters-features .toh-filter-title A:hover{
+	cursor: help;
+}
 
 
 /* Top Views ------------------------------------------------ */
