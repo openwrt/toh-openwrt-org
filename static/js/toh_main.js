@@ -2035,12 +2035,12 @@ function CellPopupModel(e, cell, onRendered) {
 			if (!formattedValue || formattedValue === 'null' || formattedValue === '-' || isGenerigImage(value) ) return true;
 
 			if (!done) {
-				contents += "<table class='toh-details-table'><tr class='toh-details-group-tr'><td colspan=2>" + obj.name + "</td></tr>";
+				contents += "<div class='toh-details-group'>\n<div class='toh-details-title'>" + obj.name + "</div>\n<table class='toh-details-table'>";
 				done = true;
 			}
 			contents += '<tr><td class="toh-details-key"><a href="#" title="'+ col.headerTooltip +'">' + col.title + "</a></td><td class='toh-details-value'>" + formattedValue + "</td></tr>";
 		});
-		if (done) contents += "</table>";
+		if (done) contents += "</table>\n</div>";
 	});
 
 	contents += "</div></div><div class='toh-details-bottom'></div>";
