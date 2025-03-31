@@ -1,32 +1,48 @@
-# OpenWrt Table Of Hardware (TOH)
+<img width="1113" alt="Image" src="https://github.com/user-attachments/assets/86729744-cae2-4c1d-b4d1-7263a6a7d42a" />
 
-> "The Coolest Thing Since Sliced Bread"
+# OpenWrt Table of Hardware (ToH)
 
-Welcome to the slick, shiny foundation of the new official **Table of Hardware (TOH)** page for OpenWrt, now rocking the internet at [https://toh.openwrt.org](https://toh.openwrt.org). Adopted by the OpenWrt team to ditch the old, clunky setup, this project is here to deliver hardware compatibility data with style, speed, and a sprinkle of open-source swagger.
+_A Smart, Fast Hardware Database for OpenWrt_
+
+The **OpenWrt Table of Hardware (ToH)** is live at
+[https://toh.openwrt.org/](https://toh.openwrt.org).
+It delivers accurate, easily searchable hardware compatibility data,
+replacing an earlier slow, cumbersome facility.
+
+As shown in the image above, the ToH displays a table
+of technical information about each router.
+Enter a value in a field in the column heading
+to select rows that contain that value;
+click the up/down arrows to sort by that column. 
 
 ## Overview
 
-At its core, this bad boy parses the [`toh.json`](https://openwrt.org/toh.json) file—a chaotic, "dirty build" Frankenstein stitched together from OpenWrt wiki entries. We take that mess, polish it up, and serve it fresh for the TOH page, keeping your hardware info accurate and your router dreams alive.
+The ToH pages reads the `toh.json` file from
+[https://openwrt.org/toh.json](https://openwrt.org/toh.json) to get the values in the table.
 
-## Features
+The `toh.json` file is created by a nightly process
+that scans all the pages from the
+[Hardware Data](https://openwrt.org/toh/hwdata/start)
+section of the [OpenWrt Wiki](https://openwrt.org).
+These pages are user-maintained, and include the
+best-available information about each device/router.
 
-- **Official TOH Vibes**: Powers the live OpenWrt Table of Hardware at [https://toh.openwrt.org](https://toh.openwrt.org).
-- **JSON Wizardry**: Slices and dices [`toh.json`](https://openwrt.org/toh.json) like a ninja chef, turning wiki chaos into structured gold.
-- **Community Swagger**: We need YOU—yes, YOU—to jump in and make this thing even cooler.
+## How to Contribute  
 
-## Preproduction Sneak Peek
+The ToH code is maintained in
+[its Github repo](https://github.com/openwrt/toh-openwrt-org).
+We welcome developers, designers, and OpenWrt enthusiasts
+to help improve the ToH.
+Whether you want to refine data parsing,
+enhance the user interface, or optimize performance,
+your contributions are invaluable.
+Here’s how you can get involved
 
-Want a taste of the action before it goes live? 
+- **Submit Pull Requests** – Implement fixes, introduce features, or improve efficiency.  
+- **Report Issues** – Identify bugs, suggest enhancements, or provide feedback.  
+- **Enhance Hardware Data pages** – Help refine the source data for better accuracy and usability.  
 
-Check out the [**preproduction preview**](https://openwrt.github.io/toh-openwrt-org) (aka the develop branch). 
-
-Once we’ve ironed out the wrinkles (and maybe added some glitter), it gets unleashed on the official TOH URL: [https://toh.openwrt.org](https://toh.openwrt.org).
-
-## Contributing - Be the Hero We Need!
-
-This project is begging for your brilliance! Got a knack for code? A flair for design? Or just a burning desire to make routers everywhere proud? Contributions are not just welcome—they’re celebrated with virtual high-fives and eternal glory. Here’s how to join the party:
-- **Pull Requests**: Fix bugs, add features, or just flex your coding muscles—we’re here for it.
-- **Issues**: Spot something wonky? Have a wild idea? Shout it out loud!
-
-
-Fork this repo, tweak it, break it, make it sing, then send us a pull request (to the **develop branch**). Together, we’ll turn the TOH into the stuff of legends. Don’t just sit there—grab your keyboard and let’s make OpenWrt history!
+Fork the repository, refine the code, and submit a pull request.
+Together, we can build a robust, user-friendly ToH
+that benefits the entire OpenWrt community. 
+Thanks.
