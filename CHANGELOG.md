@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Version 1.77 - 2025-xx-xx
+## Version 1.77 - 2025-03-31
 
 * Makes View presets more responsive.
 * Enhances Top Title sections
