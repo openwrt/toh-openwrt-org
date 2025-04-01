@@ -1,8 +1,7 @@
-<img width="1113" alt="Image" src="https://github.com/user-attachments/assets/86729744-cae2-4c1d-b4d1-7263a6a7d42a" />
-
 # OpenWrt Table of Hardware (ToH)
-
 _A Smart, Fast Hardware Database for OpenWrt_
+
+<img alt="Image" src="readme_screen.png" width="100%" style="margin:5px 0 15px 0" />
 
 The **OpenWrt Table of Hardware (ToH)** is live at
 [https://toh.openwrt.org/](https://toh.openwrt.org).
