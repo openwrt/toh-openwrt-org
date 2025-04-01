@@ -2017,7 +2017,8 @@ function CellPopupModel(e, cell, onRendered) {
 			var value = data[field];
 			var formatter = (columnMap[field] || { getDefinition: () => col }).getDefinition().formatter || ((cell) => cell.getValue());
 
-			var mycol=col;
+			// add label
+			var mycol=JSON.parse(JSON.stringify(col)); //object deep copy
 			if(mycol.formatterParams){
 				mycol.formatterParams.label = mycol.formatterParams.ttip;
 				mycol.formatterParams.short =true;

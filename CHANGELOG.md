@@ -2,6 +2,7 @@
 
 ## Version 1.78 - 2025-xx-xx
 
+* Fixes Labels wrongly shown in icons columns
 * Better ReadMe
 
 
