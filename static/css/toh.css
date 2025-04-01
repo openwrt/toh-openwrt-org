@@ -1178,21 +1178,42 @@ A.tlink.VIRT_firm I.dlerror{
 	opacity: 1;
 }
 
-/* row hover*/
-@media (hover: hover) and (pointer: fine) {
-	#toh-table .tabulator-row.tabulator-selectable:hover {
-		background-color:rgb(150, 234, 210);
-		/* background-color:rgb(213, 245, 176); */
-	}
+
+
+/* Hover and Active Rows ----------------------------------------- */  
+#toh-table .tabulator-row.popup-active{
+	background: linear-gradient(to top, #444 0%,#666 100%);
 }
+#toh-table .tabulator-row.popup-active,
+.tabulator-row.popup-active A{
+	color: #fff ;
+}
+
+/* row hover ---- */
+/* 
+@media (hover: hover) and (pointer: fine) {
+	#toh-table .tabulator-row.tabulator-selectable:hover {background-color:rgb(150, 234, 210);}
+}
+*/
+#toh-table .tabulator-row:hover {
+	background:rgb(150, 234, 210);
+}
+#toh-table .tabulator-row:hover,
+#toh-table .tabulator-row:hover A{
+	color: #000;
+}
+#toh-table .tabulator-row.popup-active:hover {
+	background:rgb(107, 168, 150);
+	background: linear-gradient(to top, rgb(85, 169, 144) 0%, rgb(121, 203, 180) 100%);
+
+}
+#toh-table .tabulator-row.popup-active:hover,
+#toh-table .tabulator-row.popup-active:hover A{
+	color: #fff;
+}
+
 
 /* Cell Details Popup ----------------------------------------- */  
-.tabulator-row.popup-active{
-	background-color: rgba(0, 0, 255, 0.05);
-	border-top: rgba(0,0,0,0.3) 1px solid;
-	border-bottom: rgba(0,0,0,0.3) 1px solid;
-}
-
 
 .toh-details-container{
 	border: 0;

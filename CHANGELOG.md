@@ -3,6 +3,7 @@
 ## Version 1.78 - 2025-xx-xx
 
 * Fixes Labels wrongly shown in icons columns
+* Change color of the popup-active row
 * Better ReadMe
 
 
