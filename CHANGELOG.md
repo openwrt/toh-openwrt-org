@@ -2,6 +2,7 @@
 
 ## Version 1.78 - 2025-xx-xx
 
+* Allows to export table data
 * Fixes Labels wrongly shown in icons columns
 * Change color of the popup-active row
 * Better ReadMe

@@ -189,7 +189,7 @@
 								</span>
 							</div>
 
-							<div id="toh-header-count"><span id="toh-count"></span> devices</div>
+							<div id="toh-header-count"><span class="toh-count-rows-full"></span> devices</div>
 
 						</div>
 					</div>
@@ -276,6 +276,22 @@
 					<!-- Main Table ------------------- -->		
 					<div id='toh-table-container'>
 						<div id='toh-table'></div>		
+					</div>
+
+					<div id="toh-bot">
+						<div id="toh-bot-buttons">
+								<span id="toh-bot-but-title">Export Table Data :</span> 
+								<select name="dlrange">
+									<option value="all">All</option>
+									<option value="active" selected><b class="toh-count"></b> Filtered</option>
+								</select> 
+								rows, with the <span class="toh-count-cols-full"></span> shown columns 
+								<span id="toh-bot-but-group">
+									<a href="#" class="toh-but toh-but-download" data-dltype="csv" title="Download as CSV"><i class="fa-solid fa-download"></i> CSV</a> 
+									<!-- <a href="#" class="toh-but toh-but-download" data-dltype="xlsx" title="Download as Excel"><i class="fa-solid fa-download"></i> Download as Excel (xlsx)</a>  -->
+									<a href="#" class="toh-but toh-but-download" data-dltype="json" title="Download as JSON"><i class="fa-solid fa-download"></i> JSON</a> 
+								</span>
+						</div>
 					</div>
 
 					<div id="toh-image-preview"></div>

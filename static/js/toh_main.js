@@ -451,6 +451,7 @@ function showAndCheckColumn(col,state=true){
 	else{
 		tabuTable.hideColumn(col);
 	}
+	UpdateCountCols();
 	checkColumn(col,state);
 }
 
@@ -473,6 +474,7 @@ function showAllColumns(bool) {
 			tabuTable.hideColumn(column.field);
 		}
 	});
+	UpdateCountCols();
 }
 
 // Apply a View Preset : show/hide columns -----------------------
@@ -1134,7 +1136,7 @@ function SetDefaults(){
 }
 
 // Display filtered / total count ------------------------------------------
-function UpdateCount(selected, total){
+function UpdateCountRows(){
 	var html='';
 	selected	=tabuTable.getDataCount("active");
 	total		=tabuTable.getDataCount();
@@ -1142,7 +1144,24 @@ function UpdateCount(selected, total){
 		html='<b>'+selected+"</b> / ";
 	}
 	html +="<i>"+total+"</i>";
-	$('#toh-count').html(html);
+	$('.toh-count-rows-full').html(html);
+	
+	//$('.toh-count-rows').html(selected);
+	$('#toh-bot-buttons OPTION[value=all]').html(total + " total");
+	$('#toh-bot-buttons OPTION[value=active]').html(selected + " filtered");
+}
+
+// Display filtered / total count ------------------------------------------
+function UpdateCountCols(){
+	var html='';
+	selected	=tabuTable.getColumns().filter(col => col.isVisible()).length;
+	total		=tabuTable.getColumns().length;
+	if(selected < total){
+		html='<b>'+selected+"</b> / ";
+	}
+	html +="<i>"+total+"</i>";
+	$('.toh-count-cols-full').html(html);	
+	//$('.toh-count-cols').html(selected);
 }
 
 // jquery shake effect -----------------------------------------------------
@@ -1771,7 +1790,48 @@ $(document).ready(function () {
 
 
 
+	// Click: Download ----------------
+	$(".toh-but-download").on('click', function (e) {
+		myLogFunc('on Click But Download');
+		e.preventDefault();
+		let type=$(this).data('dltype');
+		let range=$('SELECT[name=dlrange] OPTION:selected').val();
+		myLogStr(type+' / '+range);
+		DownloadTable(type, range);
+	});
 
+	function DownloadTable(type, mode) {
+		type = type ? type : 'csv';
+		mode = mode ? mode : 'all';
+		const dl_types = {
+			csv: {
+				ext: 'csv',
+			},
+			xlsx: {
+				ext: 'xlsx',
+			},
+			json: {
+				ext: 'json',
+			},
+		};
+		const dl_modes = {
+			all: {
+				range: 'all',
+				suffix: '_all',
+			},
+			active: {
+				range: 'active',
+				suffix: '_filtered',
+			}
+		};
+
+		if (!dl_types[type] || !dl_modes[mode] ) {
+			return false;
+		}
+
+		const file_name = 'OpenWrt_ToH' + dl_modes[mode].suffix + '.' + dl_types[type].ext;
+		tabuTable.download(type, file_name, {}, dl_modes[mode].range);
+	}
 
 	// Header Filters #########################################################################################################
 
@@ -1851,7 +1911,8 @@ $(document).ready(function () {
 	// Update the counter when 'dataFiltered' event is REALLY finished --------------------
 	tabuTable.on("renderComplete", function(){
 		myLogStr('EVENT: table-change-complete', 4);
-		UpdateCount();
+		UpdateCountRows();
+		UpdateCountCols();
 	});
 
 	// Resfresh column color on header-filter INPUT' blur ---------------------------------
