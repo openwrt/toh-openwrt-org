@@ -32,6 +32,8 @@
 		<script src="static/js/jquery_v1.12.4.min.js"></script>
 		<script src="static/lib/tabulator-6.3.0/js/tabulator.min.js"></script>
 		<script src="static/js/snarkdown.umd.js"></script>
+		<!-- <script src="static/js/xlsx.mini.min.js"></script> -->
+
 
 		<!-- Internal Includes -------------------------------------------------------->
 		<!-- 
@@ -72,83 +74,81 @@
 	<body>
 
 		<style>
-		#toh-boot-overlay {
-			background: rgb(0, 163, 225);
-			background: linear-gradient(to top,  rgba(0,175,239,1) 0%,rgba(0,153,209,1) 100%);
-			position: fixed;
-			top: 0;
-			left: 0;
-			width: 100%;
-			height: 100%;
-			z-index: 9998;
-			opacity: 1;
-			animation: fade 5.0s ease forwards;
-			/* display: none; */
-		}
-		@keyframes fade {
-			0%     { opacity: 1; }
-		    50% 	{ opacity: 1; }
-    		100%   { opacity: 0.8; }
-		}
-		#toh-boot-overlay-bg{
-			height: 100%;
-			display: flex;
-			flex-direction: column;
-			justify-content: center;
-			align-items: center;
-			padding-bottom: 120px;
-		}
-		#toh-boot-span {
-			margin-top: 30px;
-			font-size: 16px;
-			color: #000;
-			display: inline-block;
-			text-align: center;
-			background-color: #fff;
-			padding: 15px 30px;
-			border-radius: 20px;
-			border: 1px solid rgba(0,0,0, 0.5);
-			min-width: 230px;
-			box-shadow: inset 2px 2px 6px 0px rgba(0,0,0,.4) ;
-			opacity: 0.75;
-		}
-		#toh-boot-logo,
-		#toh-boot-logo IMG{
-			width: 270px;
-		}
-		#toh-boot-icon{
-			margin-bottom: 20px;
-        }
+			#toh-boot-overlay {
+				background: rgb(0, 163, 225);
+				background: linear-gradient(to top,  rgba(0,175,239,1) 0%,rgba(0,153,209,1) 100%);
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				z-index: 9998;
+				opacity: 1;
+				animation: fade 5.0s ease forwards;
+				/* display: none; */
+			}
+			@keyframes fade {
+				0%     { opacity: 1; }
+				50% 	{ opacity: 1; }
+				100%   { opacity: 0.8; }
+			}
+			#toh-boot-overlay-bg{
+				height: 100%;
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
+				padding-bottom: 120px;
+			}
+			#toh-boot-span {
+				margin-top: 30px;
+				font-size: 16px;
+				color: #000;
+				display: inline-block;
+				text-align: center;
+				background-color: #fff;
+				padding: 15px 30px;
+				border-radius: 20px;
+				border: 1px solid rgba(0,0,0, 0.5);
+				min-width: 230px;
+				box-shadow: inset 2px 2px 6px 0px rgba(0,0,0,.4) ;
+				opacity: 0.75;
+			}
+			#toh-boot-logo,
+			#toh-boot-logo IMG{
+				width: 270px;
+			}
+			#toh-boot-icon{
+				margin-bottom: 20px;
+			}
 
-		#toh-boot-logo{
-            animation: 0.7s bounce 2s infinite;
-		}
-        @keyframes bounce {
-            0% {
-                transform: translateY(0);
-                animation-timing-function: ease-in;
-            }
-            15% {
-                transform: translateY(-50px);
-                animation-timing-function: ease-out;
-            }
-            50% {
-                transform: translateY(-70px);
-                animation-timing-function: ease-in;
-				opacity: 0.8;
-            }
-            85% {
-                transform: translateY(-50px);
-                animation-timing-function: ease-out;
-            }
-            100% {
-                transform: translateY(0);
-            }
-        }
-
-
-
+			#toh-boot-logo{
+				animation: 0.7s bounce 2s infinite;
+			}
+			@keyframes bounce {
+				0% {
+					transform: translateY(0);
+					animation-timing-function: ease-in;
+				}
+				15% {
+					transform: translateY(-50px);
+					animation-timing-function: ease-out;
+				}
+				50% {
+					transform: translateY(-70px);
+					animation-timing-function: ease-in;
+					opacity: 0.8;
+				}
+				85% {
+					transform: translateY(-50px);
+					animation-timing-function: ease-out;
+				}
+				100% {
+					transform: translateY(0);
+				}
+			}
 		</style>
+
 		<div id="toh-boot-overlay">
 			<div id="toh-boot-overlay-bg">
 				<div id="toh-boot-logo"><img src="static/img/logo.svg" alt="Logo" /></div>
@@ -288,7 +288,7 @@
 								rows, with the <span class="toh-count-cols-full"></span> shown columns 
 								<span id="toh-bot-but-group">
 									<a href="#" class="toh-but toh-but-download" data-dltype="csv" title="Download as CSV"><i class="fa-solid fa-download"></i> CSV</a> 
-									<!-- <a href="#" class="toh-but toh-but-download" data-dltype="xlsx" title="Download as Excel"><i class="fa-solid fa-download"></i> Download as Excel (xlsx)</a>  -->
+									<!-- <a href="#" class="toh-but toh-but-download" data-dltype="xlsx" title="Download as Excel"><i class="fa-solid fa-download"></i> Excel (.xlsx)</a>  -->
 									<a href="#" class="toh-but toh-but-download" data-dltype="json" title="Download as JSON"><i class="fa-solid fa-download"></i> JSON</a> 
 								</span>
 						</div>
