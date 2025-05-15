@@ -983,35 +983,40 @@ function GetFirmwareSelectUrl(id, target) {
 
 // Position the Image Preview div -------------------------------
 function positionPreview($link, $container) {
-	var linkOffset = $link.offset();
-	var linkWidth = $link.outerWidth();
-	var linkHeight = $link.outerHeight();
-	var containerWidth = $container.outerWidth();
-	var containerHeight = $container.outerHeight();
-	var windowWidth = $(window).width();
-	var windowHeight = $(window).height();
-	var scrollTop = $('BODY').scrollTop();
+    const offset = $link.offset();
+    const linkWidth = $link.outerWidth();
+    const linkHeight = $link.outerHeight();
+    const containerWidth = $container.outerWidth();
+    const containerHeight = $container.outerHeight();
+    const windowWidth = $(window).width();
+    const windowHeight = $(window).height();
+    const scrollTop = $(window).scrollTop();
 
-	var left = linkOffset.left + linkWidth + 10; // 10px to the right of the link
-	var top = linkOffset.top + scrollTop;
+    // Calculate position
+    let left = offset.left + (linkWidth / 2) - (containerWidth / 2);
+    let top = offset.top + linkHeight + 5;
 
-	// Check if the preview would go off the right edge of the window
-	if (left + containerWidth > windowWidth) {
-		left = linkOffset.left - containerWidth - 10; // 10px to the left of the link
-	}
+    // Ensure preview stays within window bounds
+    if (left + containerWidth > windowWidth) {
+        left = windowWidth - containerWidth - 10;
+    }
+    if (left < 0) {
+        left = 10;
+    }
+    
+    // If preview would go below viewport, show it above the link instead
+    if (top + containerHeight > scrollTop + windowHeight) {
+        top = offset.top - containerHeight - 5;
+    }
 
-	// Check if the preview would go off the bottom of the viewport
-	if (top + containerHeight > scrollTop + windowHeight) {
-		top = Math.max(scrollTop, top + linkHeight - containerHeight);
-	}
-
-	// Ensure the preview doesn't go above the top of the viewport
-	top = Math.max(scrollTop, top);
-
-	$container.css({
-		left: left,
-		top: top
-	});
+    // Apply position with smooth transition
+    $container.css({
+        left: Math.round(left) + 'px',
+        top: Math.round(top) + 'px',
+        opacity: 1,
+        visibility: 'visible',
+        transition: 'opacity 0.2s ease-in-out'
+    });
 }
 
 
@@ -2106,7 +2111,7 @@ function CellPopupModel(e, cell, onRendered) {
 				contents += "<div class='toh-details-group'>\n<div class='toh-details-title'>" + obj.name + "</div>\n<table class='toh-details-table'>";
 				done = true;
 			}
-			contents += '<tr><td class="toh-details-key"><a href="#" title="'+ col.headerTooltip +'">' + col.title + "</a></td><td class='toh-details-value'>" + formattedValue + "</td></tr>";
+			contents += '<tr><td class="toh-details-key"><a href="#" title="'+ col.headerTooltip +'">' + col.title + "</a></td><td class='toh-details-value'>" + formattedValue + "</td></tr>';
 		});
 		if (done) contents += "</table>\n</div>";
 	});
@@ -2280,37 +2285,65 @@ function isGenerigImage(url){
 
 // --------------------------------------------------------
 function FormatterImages(cell, formatterParams, onRendered) {
-	var arr = cell.getValue();
-	var url='';
-	var out='';
-	if (Array.isArray(arr) && arr.length > 0) {
-		arr.forEach((value, index) => {
-			if(value.match(/^http/)){
-				url=value;
-			}
-			else{
-				value=value.replace(/:/g,'/');
-				url=toh_urls.media + value;
-			}
-			if(isGenerigImage(value)){
-				out +='<a href="' + url + '" target="_blank" class="cell-image generic"><i class="fa-fw fa-regular fa-image"></i></a> ';
-			}
-			else{
-				out +='<a href="' + url + '" target="_blank" class="cell-image"><i class="fa-fw fa-solid fa-image"></i></a> ';
-			}
+    const value = cell.getValue();
+    if (!value || value.length === 0) return '';
 
-			// preload images --------
-			//const img = new Image();
-			//img.src = url;
-
-			if (!toh_img_urls.includes(url)) {
-				toh_img_urls.push(url);
-			}
-
-		});
-		return out;
-	} 
-	return arr;
+    const images = Array.isArray(value) ? value : [value];
+    const $container = $('<div class="cell-image-container"></div>');
+    
+    // Create a single icon for all images
+    const $mainLink = $('<a href="#" class="cell-image-group"><i class="fa-solid fa-images"></i></a>');
+    const $preview = $('<div id="toh-image-preview" style="display:none;"><div class="spinner"><i class="fa-solid fa-spinner fa-spin"></i></div><div class="toh-multiple-preview"></div></div>').appendTo('body');
+    
+    let hoverTimeout;
+    let leaveTimeout;
+    
+    $mainLink.on({
+        mouseenter: function() {
+            clearTimeout(leaveTimeout);
+            const $this = $(this);
+            
+            hoverTimeout = setTimeout(() => {
+                $('.cell-image-group').removeClass('active');
+                $this.addClass('active');
+                
+                const $previewContainer = $preview.find('.toh-multiple-preview');
+                $previewContainer.empty();
+                $preview.find('.spinner').show();
+                
+                let loadedImages = 0;
+                const totalImages = images.length;
+                
+                images.forEach((url, index) => {
+                    if (!url) return;
+                    
+                    const $imgWrapper = $('<div class="toh-preview-image-wrapper"></div>');
+                    const $img = $('<img />').on('load', function() {
+                        loadedImages++;
+                        if (loadedImages === totalImages) {
+                            $preview.find('.spinner').hide();
+                            positionPreview($this, $preview);
+                        }
+                    }).attr('src', url);
+                    
+                    $imgWrapper.append($img);
+                    $previewContainer.append($imgWrapper);
+                });
+                
+                $preview.stop(true, true).fadeIn(200);
+            }, 100);
+        },
+        mouseleave: function() {
+            clearTimeout(hoverTimeout);
+            leaveTimeout = setTimeout(() => {
+                $(this).removeClass('active');
+                $preview.stop(true, true).fadeOut(200);
+            }, 200);
+        }
+    });
+    
+    $container.append($mainLink);
+    return $container[0];
 }
 
 // --------------------------------------------------------
