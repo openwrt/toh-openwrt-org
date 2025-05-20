@@ -1013,12 +1013,32 @@ A.toh-but:hover{
 	background-color: #fff;
 	box-shadow: 4px 4px 10px 2px rgba(0,0,0,.2);
 	border-radius: 5px;
+	padding: 5px;
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
 }
+
+#toh-image-preview.show {
+	opacity: 1;
+	visibility: visible;
+}
+
 #toh-image-preview img {
 	max-width: 300px;
 	max-height: 300px;
 	display: block;
-	border-radius: 5px;
+	border-radius: 3px;
+}
+
+#toh-image-preview .spinner {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 300px;
+	height: 300px;
+	color: #666;
+	font-size: 24px;
 }
 
 
