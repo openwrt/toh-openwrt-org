@@ -992,26 +992,31 @@ function positionPreview($link, $container) {
 	var windowHeight = $(window).height();
 	var scrollTop = $('BODY').scrollTop();
 
-	var left = linkOffset.left + linkWidth + 10; // 10px to the right of the link
-	var top = linkOffset.top + scrollTop;
+    // Calculate position
+    let left = offset.left + (linkWidth / 2) - (containerWidth / 2);
+    let top = offset.top + linkHeight + 5;
 
-	// Check if the preview would go off the right edge of the window
-	if (left + containerWidth > windowWidth) {
-		left = linkOffset.left - containerWidth - 10; // 10px to the left of the link
-	}
+    // Ensure preview stays within window bounds
+    if (left + containerWidth > windowWidth) {
+        left = windowWidth - containerWidth - 10;
+    }
+    if (left < 0) {
+        left = 10;
+    }
+    
+    // If preview would go below viewport, show it above the link instead
+    if (top + containerHeight > scrollTop + windowHeight) {
+        top = offset.top - containerHeight - 5;
+    }
 
-	// Check if the preview would go off the bottom of the viewport
-	if (top + containerHeight > scrollTop + windowHeight) {
-		top = Math.max(scrollTop, top + linkHeight - containerHeight);
-	}
-
-	// Ensure the preview doesn't go above the top of the viewport
-	top = Math.max(scrollTop, top);
-
-	$container.css({
-		left: left,
-		top: top
-	});
+    // Apply position with smooth transition
+    $container.css({
+        left: Math.round(left) + 'px',
+        top: Math.round(top) + 'px',
+        opacity: 1,
+        visibility: 'visible',
+        transition: 'opacity 0.2s ease-in-out'
+    });
 }
 
 
@@ -1296,14 +1301,19 @@ $(document).ready(function () {
 		mouseenter: function(e) {
 			var $link = $(this);
 			var imageUrl = $link.attr('href');
-			$container.html('<img src="' + imageUrl + '" alt="Image Preview">');
-		
+			
+			// Create and load the image
+			var $img = $('<img>').attr('src', imageUrl);
+			
+			// Clear previous content and add loading spinner
+			$container.html('<div class="spinner"><i class="fa-solid fa-spinner fa-spin"></i></div>');
+			$container.show();
+			
 			// Wait for the image to load before positioning
-			$container.find('img').on('load', function() {
+			$img.on('load', function() {
+				$container.html($img);
 				positionPreview($link, $container);
 			});
-
-			$container.show();
 		},
 		mouseleave: function() {
 			$container.hide().empty();
