@@ -1006,11 +1006,28 @@ A.toh-but:hover{
 	opacity: 0.5;
 	color: red;
 }
+/* how many pictures the single icon stands for */
+#toh-table .tabulator-cell .cell-image-count{
+	font-size: 9px;
+	font-weight: 700;
+	vertical-align: super;
+	margin-left: -3px;
+	color: #0081b3;
+}
+
+/* the preview says why it is empty rather than showing nothing at all */
+#toh-image-preview .toh-preview-error{
+	padding: 8px 12px;
+	font-size: 12px;
+	line-height: 1.4;
+	color: #a00;
+	max-width: 220px;
+}
+
+/* not a link: it marks a device that has no picture of its own */
 #toh-table-container .tabulator-cell .cell-image.generic{
 	color: #ccc;
-}
-#toh-table .tabulator-cell .cell-image.generic:hover{
-	color: #666;
+	cursor: default;
 }
 
 
@@ -1031,6 +1048,116 @@ A.toh-but:hover{
 	max-height: 300px;
 	display: block;
 	border-radius: 5px;
+}
+
+
+/* Image Lightbox ------------------------------------------- */
+
+#toh-image-lightbox {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 10010; /* over the image preview */
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+	background-color: rgba(0,0,0,.6);
+}
+#toh-image-lightbox .toh-lightbox-border{
+	display: flex;
+	flex-direction: column;
+	max-width: 100%;
+	max-height: 100%;
+	box-shadow: 4px 4px 10px 2px rgba(0,0,0,0.2);
+	background-color: #fff;
+	border-radius: 5px;
+	/* keeps the head's corners with the box's, no white rim around the title */
+	overflow: hidden;
+}
+#toh-image-lightbox .toh-lightbox-head{
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	border-bottom: #111 1px solid;
+	color: #fff;
+	background: linear-gradient(to top, #444 0%,#666 100%);
+	font-size: 14px;
+	line-height: 16px;
+	padding: 4px 10px;
+}
+#toh-image-lightbox .toh-lightbox-source{
+	color: #fff;
+	font-size: 13px;
+	text-decoration: none;
+	opacity: 0.8;
+}
+#toh-image-lightbox .toh-lightbox-source:hover{
+	opacity: 1;
+	text-decoration: underline;
+}
+#toh-image-lightbox .toh-lightbox-counter{
+	color: #fff;
+	font-size: 12px;
+	opacity: 0.85;
+	padding: 0 10px;
+}
+#toh-image-lightbox .toh-lightbox-body{
+	display: flex;
+	align-items: center;
+	min-height: 0;
+}
+#toh-image-lightbox .toh-lightbox-nav{
+	flex: 0 0 auto;
+	border: 0;
+	background: transparent;
+	color: #888;
+	font-size: 20px;
+	padding: 10px 14px;
+	cursor: pointer;
+	align-self: stretch;
+}
+#toh-image-lightbox .toh-lightbox-nav:hover{
+	color: #0081b3;
+	background-color: rgba(0,0,0,.04);
+}
+#toh-image-lightbox .toh-lightbox-close{
+	line-height: 100%;
+	opacity: 0.6;
+}
+#toh-image-lightbox .toh-lightbox-close:hover{
+	cursor: pointer;
+	opacity: 1;
+}
+#toh-image-lightbox .toh-lightbox-content{
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: auto;
+	min-width: 120px;
+	min-height: 120px;
+	padding: 5px;
+	color: #666;
+}
+#toh-image-lightbox .toh-lightbox-content img{
+	display: block;
+	max-width: 100%;
+	/* head, paddings and the container's own 20px margin */
+	max-height: calc(100vh - 80px);
+	object-fit: contain;
+}
+#toh-image-lightbox .toh-lightbox-error{
+	padding: 20px;
+	font-size: 14px;
+	color: #a00;
+	text-align: center;
+}
+#toh-image-lightbox .toh-lightbox-error A{
+	display: inline-block;
+	margin-top: 10px;
+	color: #0081b3;
 }
 
 

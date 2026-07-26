@@ -1014,6 +1014,120 @@ function positionPreview($link, $container) {
 	});
 }
 
+// Every picture a cell's image link stands for --------------------
+// The icon carries the whole set, so the lightbox can page through it.
+function imagesOfLink($link){
+	var list=$link.attr('data-images');
+	if(list){
+		return list.split(' ').filter(function(url){ return url.length > 0; });
+	}
+	return [$link.attr('href')];
+}
+
+// Open the Image Lightbox --------------------------------------
+// Takes the whole set of pictures a device has, so the arrows can page
+// through them without going back to the table.
+function OpenImageLightbox(urls, index) {
+	if(typeof urls == 'string'){
+		urls=[urls];
+	}
+	if(!Array.isArray(urls) || urls.length == 0){
+		return;
+	}
+	CloseImageLightbox();
+
+	var current=index > 0 ? index : 0;
+	var many=urls.length > 1;
+	var token=0;	// tells a slow image that the arrows have moved on without it
+
+	var $box = $(
+		'<div id="toh-image-lightbox">' +
+			'<div class="toh-lightbox-border">' +
+				'<div class="toh-lightbox-head">' +
+					'<a class="toh-lightbox-source" target="_blank" rel="noopener" title="Open the image in a new tab"><i class="fa-solid fa-up-right-from-square"></i> Open original</a>' +
+					'<span class="toh-lightbox-counter"></span>' +
+					'<div class="toh-lightbox-close" title="Close (Esc)"><i class="fa-solid fa-circle-xmark"></i></div>' +
+				'</div>' +
+				'<div class="toh-lightbox-body">' +
+					'<button type="button" class="toh-lightbox-nav toh-lightbox-prev" title="Previous picture"><i class="fa-solid fa-chevron-left"></i></button>' +
+					'<div class="toh-lightbox-content"></div>' +
+					'<button type="button" class="toh-lightbox-nav toh-lightbox-next" title="Next picture"><i class="fa-solid fa-chevron-right"></i></button>' +
+				'</div>' +
+			'</div>' +
+		'</div>'
+	);
+	if(!many){
+		$box.find('.toh-lightbox-nav').remove();
+	}
+
+	function showImage(wanted){
+		current=(wanted + urls.length) % urls.length;	// the arrows wrap around
+		var url=urls[current];
+		var mine=++token;
+
+		$box.find('.toh-lightbox-source').attr('href', url);
+		$box.find('.toh-lightbox-counter').text(many ? (current + 1) + ' / ' + urls.length : '');
+		$box.find('.toh-lightbox-content').html('<i class="fa-solid fa-arrows-rotate fa-spin fa-2x"></i>');
+
+		var $img = $('<img>', {alt: 'Device Image'});
+		$img.on('load', function() {
+			if(mine != token){
+				return;
+			}
+			$box.find('.toh-lightbox-content').empty().append($img);
+		});
+		$img.on('error', function() {
+			if(mine != token){
+				return;
+			}
+			// The wiki sits behind an anti-bot challenge that images embedded from
+			// another page cannot answer, so they are served an HTML page instead.
+			// Opening the image as a normal navigation does pass the challenge.
+			var $err = $('<div class="toh-lightbox-error"></div>');
+			$err.append('<div><i class="fa-solid fa-triangle-exclamation"></i> This image could not be loaded from the wiki.</div>');
+			$err.append($('<a target="_blank" rel="noopener">Open it directly on openwrt.org</a>').attr('href', url));
+			$box.find('.toh-lightbox-content').empty().append($err);
+		});
+		$img.attr('src', url);
+	}
+
+	$box.find('.toh-lightbox-prev').on('click', function(e) {
+		e.stopPropagation();
+		showImage(current - 1);
+	});
+	$box.find('.toh-lightbox-next').on('click', function(e) {
+		e.stopPropagation();
+		showImage(current + 1);
+	});
+
+	// close on backdrop click, but not when clicking the image itself
+	$box.on('click', function(e) {
+		if(e.target === this || $(e.target).closest('.toh-lightbox-close').length){
+			CloseImageLightbox();
+		}
+	});
+	$(document).on('keydown.tohlightbox', function(e) {
+		if(e.keyCode == 27){	//esc
+			CloseImageLightbox();
+		}
+		else if(many && e.keyCode == 37){	//left
+			showImage(current - 1);
+		}
+		else if(many && e.keyCode == 39){	//right
+			showImage(current + 1);
+		}
+	});
+
+	$('BODY').append($box);
+	showImage(current);
+}
+
+// Close the Image Lightbox -------------------------------------
+function CloseImageLightbox() {
+	$(document).off('keydown.tohlightbox');
+	$('#toh-image-lightbox').remove();
+}
+
 
 
 var loading_is_running	= false;
@@ -1292,23 +1406,55 @@ $(document).ready(function () {
 
 	// handles Image Preview on hover ----------------------------------------
 	var $container = $('#toh-image-preview');
+	var hoveredLink = null;	// the link the pointer is currently over, guards late load events
+
 	$(document).on({
 		mouseenter: function(e) {
 			var $link = $(this);
-			var imageUrl = $link.attr('href');
-			$container.html('<img src="' + imageUrl + '" alt="Image Preview">');
-		
-			// Wait for the image to load before positioning
-			$container.find('img').on('load', function() {
+			var link = this;
+			hoveredLink = link;
+
+			var $img = $('<img>', {alt: 'Image Preview'});
+			$img.on('load', function() {
+				// a slow image may resolve after the pointer moved on, or after a click
+				// opened the lightbox: only show it if that is still the hovered link
+				if(hoveredLink !== link){
+					return;
+				}
+				$container.empty().append($img).show();
 				positionPreview($link, $container);
 			});
-
-			$container.show();
+			$img.on('error', function() {
+				if(hoveredLink !== link){
+					return;
+				}
+				// Showing nothing looks like the preview itself is broken, so say
+				// what happened. The box is placed either way, which is what went
+				// wrong originally: it was shown but never positioned.
+				$container.empty()
+					.append('<div class="toh-preview-error">Image could not be loaded.<br>Click to open it.</div>')
+					.show();
+				positionPreview($link, $container);
+			});
+			$img.attr('src', $link.attr('href'));
 		},
 		mouseleave: function() {
+			hoveredLink = null;
 			$container.hide().empty();
 		}
 	}, 'a.cell-image');
+
+	// handles Image Lightbox on click ---------------------------------------
+	$(document).on('click', 'a.cell-image', function(e) {
+		// leave modified clicks alone, so opening in a new tab/window still works
+		if(e.which > 1 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey){
+			return;
+		}
+		e.preventDefault();
+		hoveredLink = null;
+		$container.hide().empty();
+		OpenImageLightbox(imagesOfLink($(this)), 0);
+	});
 
 
 	// Observe the DOM to show/hide the loading icon  --------------------------
@@ -2282,7 +2428,8 @@ function isGenerigImage(url){
 function FormatterImages(cell, formatterParams, onRendered) {
 	var arr = cell.getValue();
 	var url='';
-	var out='';
+	var urls=[];
+	var generic=false;
 	if (Array.isArray(arr) && arr.length > 0) {
 		arr.forEach((value, index) => {
 			if(value.match(/^http/)){
@@ -2293,11 +2440,10 @@ function FormatterImages(cell, formatterParams, onRendered) {
 				url=toh_urls.media + value;
 			}
 			if(isGenerigImage(value)){
-				out +='<a href="' + url + '" target="_blank" class="cell-image generic"><i class="fa-fw fa-regular fa-image"></i></a> ';
+				generic=true;
+				return;
 			}
-			else{
-				out +='<a href="' + url + '" target="_blank" class="cell-image"><i class="fa-fw fa-solid fa-image"></i></a> ';
-			}
+			urls.push(url);
 
 			// preload images --------
 			//const img = new Image();
@@ -2308,8 +2454,30 @@ function FormatterImages(cell, formatterParams, onRendered) {
 			}
 
 		});
+
+		if(urls.length == 0){
+			// this device has no photo, only the shared placeholder drawing.
+			// Marking it is useful, offering it to open is not, so this is not
+			// a link: there is nothing to preview and nothing worth opening.
+			if(generic){
+				return '<span class="cell-image generic" title="No picture for this device"><i class="fa-fw fa-regular fa-image"></i></span> ';
+			}
+			return arr;
+		}
+
+		// A handful of devices carry up to six pictures, and one icon each
+		// overflowed the column. One icon stands for the whole set instead, with
+		// the count on it, and the lightbox pages through them.
+		var out='<a href="' + urls[0] + '" target="_blank" class="cell-image"';
+		out +=' data-images="' + urls.join(' ') + '"';
+		out +=' title="' + (urls.length > 1 ? urls.length + ' pictures' : 'Picture') + '">';
+		out +='<i class="fa-fw fa-solid fa-image"></i>';
+		if(urls.length > 1){
+			out +='<span class="cell-image-count">' + urls.length + '</span>';
+		}
+		out +='</a> ';
 		return out;
-	} 
+	}
 	return arr;
 }
 
