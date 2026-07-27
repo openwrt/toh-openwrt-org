@@ -44,6 +44,8 @@ const toh_prefs={
 	p_features:		'features',			//name of the filter features URL parameter
 	p_view:			'view',				//name of the columns  preset URL parameter
 	p_columns:		'columns',			//name of the columns URL parameter
+	p_brand:		'brand',			//name of the brand search URL parameter
+	p_model:		'model',			//name of the model search URL parameter
 
 	cook_prefix:	'toh_',				// the cookie's prefix,
 	cook_duration:	3600*24*730,		// the cookie's duration (in sec),

@@ -664,6 +664,7 @@ function buildBrowserUrl(and_update=true){
 	var params=[];
 	var tmp_list;
 	var tmp_preset;
+	var tmp_search;
 
 	// make features
 	tmp_preset=$('#toh-filters-presets A.toh-selected').attr('data-key');
@@ -687,6 +688,16 @@ function buildBrowserUrl(and_update=true){
 		if(tmp_list.length>0){
 			params.push( toh_prefs.p_columns+'='+tmp_list.join(",") );
 		}  
+	}
+
+	// make header search
+	tmp_search=$('#toh-search-input-brand').val();
+	if(tmp_search && tmp_search.length>0){
+		params.push( toh_prefs.p_brand+'='+encodeURIComponent(tmp_search) );
+	}
+	tmp_search=$('#toh-search-input-model').val();
+	if(tmp_search && tmp_search.length>0){
+		params.push( toh_prefs.p_model+'='+encodeURIComponent(tmp_search) );
 	}
 
 	if(and_update){
@@ -1130,6 +1141,17 @@ function SetDefaults(){
 		applyCheckedFeatures();
 	}
 
+	//header search
+	myLogStr('Set Header Search',4);
+	tmp_value=getUrlParameter(toh_prefs.p_brand);
+	if(tmp_value != ''){
+		$('#toh-search-input-brand').val(tmp_value);
+	}
+	tmp_value=getUrlParameter(toh_prefs.p_model);
+	if(tmp_value != ''){
+		$('#toh-search-input-model').val(tmp_value);
+	}
+
 	//myLogStr('SetDefaults URL',4);
 	buildBrowserUrl();
 	toh_table_inited=true;
@@ -1408,7 +1430,7 @@ $(document).ready(function () {
 					$('#toh-boot-overlay').slideUp(500);
 				}
 				
-				ObserveHeaderFiltersAndInitSearch();
+				InitHeaderSearch();
 				PreLoadImagesCache();
 			});   
 		});
@@ -1470,19 +1492,52 @@ $(document).ready(function () {
 		this.timeoutId = setTimeout(() => {
 			tabuTable.setHeaderFilterValue(field,$(this).val());
 			tabuTable.refreshFilter();
+			buildBrowserUrl();
 		}, 300);
 
 	});
 
-	function ObserveHeaderFiltersAndInitSearch(){
-		$('.toh-search-input').trigger('keyup'); // needed when manually relaoding a page that already have a search query
+	// header filter -> search input.
+	// Delegated, because Tabulator rebuilds these INPUTs whenever the visible columns change.
+	$('#toh-table').on('keyup','.tabulator-header-filter INPUT', function() {
+		const field=$(this).closest('.tabulator-col').attr('tabulator-field');
+		const target=$('.toh-search-input[data-field='+field+']');
+		if(target.length==0){			// that column is not one of the two the header search offers
+			return;
+		}
+		target.val($(this).val());
+		toggleSearchClearButton(field);
+		showHeaderSearchIfUsed();
 
-		$('.tabulator-col .tabulator-header-filter INPUT').bind('keyup', function() {
-			const field=$(this).closest('.tabulator-col').attr('tabulator-field');
-			const target=$('.toh-search-input[data-field='+field+']')
-			target.val($(this).val());
-			$('#toh-search').removeClass('toh-hidden');
+		// Clear any existing timeout
+		if (this.timeoutId) {
+			clearTimeout(this.timeoutId);
+		}
+
+		// Set new timeout
+		this.timeoutId = setTimeout(() => {
+			buildBrowserUrl();
+		}, 300);
+	});
+
+	// open the header search as soon as one of its inputs holds something
+	function showHeaderSearchIfUsed(){
+		$('.toh-search-input').each(function() {
+			if($(this).val().length>0){
+				$('#toh-search').removeClass('toh-hidden');
+			}
 		});
+	}
+
+	// empty both search inputs, e.g. when the header filters are cleared
+	function clearHeaderSearch(){
+		$('.toh-search-input').val('');
+		$('.toh-search-clear').hide();
+	}
+
+	function InitHeaderSearch(){
+		showHeaderSearchIfUsed();
+		$('.toh-search-input').trigger('keyup'); // needed when manually relaoding a page that already have a search query
 	}
 
 
@@ -1773,8 +1828,8 @@ $(document).ready(function () {
 		myLogFunc('on Click But ClearHeaderFilters');
 		e.preventDefault();
 		tabuTable.clearHeaderFilter();
-		$('.toh-search-input').val('');
-		$('.toh-search-clear').hide();
+		clearHeaderSearch();
+		buildBrowserUrl();
 	});
 
 	// Click: clear all filters ----------------
@@ -1782,6 +1837,7 @@ $(document).ready(function () {
 		myLogFunc('on Click But ClearAllFilters');
 		e.preventDefault();
 		tabuTable.clearHeaderFilter();
+		clearHeaderSearch();
 		tabuTable.clearFilter();
 		checkAllFeatures(false);
 		setPresetSelectedClass('features','custom');
