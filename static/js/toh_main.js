@@ -2516,8 +2516,9 @@ function SorterRam(a, b, aRow, bRow, column, dir, sorterParams){
 
 // --------------------------------------------------------
 function _maketHwDataUrl(deviceid){
-	const [brand, model] = deviceid.split(":");
-	return toh_urls.hwdata + brand + '/' + model;
+	// a brand holding a slash spans several namespaces, so a deviceid can carry more than one colon:
+	// 'evaluation_boards:unbranded_boards:evaluation_boards_unbranded_boards_qualcomm_ap143_8m'
+	return toh_urls.hwdata + deviceid.replace(/:/g,'/');
 }
 
 // get the best value to use in sort/filter of the 'flashmb' column ----------------------
