@@ -2192,8 +2192,7 @@ function FormatterLink(cell, params, onRendered) {
 		url= devid ? _maketHwDataUrl(devid) : '';
 	}
 	else if(field=='VIRT_firm' && !params.recursive){
-		let [brand, id]	= row.deviceid.split(":");
-		id 				= brand + '_' + id.split('_').slice(1).join('-');
+		const id		= _makeFirmwareProfileId(row.deviceid);
 		const target	= row.target + '/' + row.subtarget;
 		if(!toh_firmwares_fetched){
 			//return '<a href="#" title="Failed to fetch firmwares"><i class="fa-solid fa-warning dlerror"></i></a>';
@@ -2519,6 +2518,18 @@ function _maketHwDataUrl(deviceid){
 	// a brand holding a slash spans several namespaces, so a deviceid can carry more than one colon:
 	// 'evaluation_boards:unbranded_boards:evaluation_boards_unbranded_boards_qualcomm_ap143_8m'
 	return toh_urls.hwdata + deviceid.replace(/:/g,'/');
+}
+
+// turn a deviceid into a firmware-selector profile id ----
+// 'avm:avm_fritzbox_4040' -> 'avm_fritzbox-4040'
+function _makeFirmwareProfileId(deviceid){
+	const parts	= deviceid.split(":");
+	const brand	= parts.slice(0,-1).join('_');	// the brand may span several namespaces
+	var model	= parts[parts.length-1];
+	if(model.startsWith(brand+'_')){				// the page name usually repeats the brand
+		model	= model.slice(brand.length+1);
+	}
+	return brand + '_' + model.replace(/_/g,'-');
 }
 
 // get the best value to use in sort/filter of the 'flashmb' column ----------------------
