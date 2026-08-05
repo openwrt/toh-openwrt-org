@@ -1,15 +1,16 @@
 <!DOCTYPE html>
-<html lang="">
+<html lang="en">
 	<head>
 		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 		<title>OpenWrt Table of Hardware</title>
 
-		<link rel="prefetch" href="static/img/favicon_anim.gif" as="image">
-		<link rel="prefetch" href="static/img/favicon_trans.png" as="image">
+		<link rel="icon" href="static/img/favicon_anim.gif?v=5d7c6058" />
+	    <!-- <link rel="icon" href="static/img/favicon_trans.png?v=dcb93afb" /> -->
 
-		<link rel="icon" href="static/img/favicon_anim.gif" />
-	    <!-- <link rel="icon" href="static/img/favicon_trans.png" /> -->
+		<!-- the browser chrome, so the address bar matches the theme picked below -->
+		<meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)">
+		<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
 
 		<meta name="description" content="Explore the OpenWrt Table of Hardware. Find detailed compatibility information for routers, access points, and embedded devices supported by OpenWrt firmware.">
 		<meta name="keywords" content="OpenWrt, hardware compatibility, Table of Hardware, TOH, router firmware, open-source networking, device support, wireless routers">
@@ -19,327 +20,636 @@
 		<meta property="og:url" content="https://toh.openwrt.org">
 
 
-		<!-- Prefetch DNS ------------------------------------>
+		<!-- Warm the two hosts the page cannot finish without ---------------
+			preconnect does the TLS handshake during the HTML parse instead of
+			after it; dns-prefetch stays as the fallback. crossorigin matters:
+			the dataset is fetched anonymously, and a socket opened in the wrong
+			credentials mode is not reused.
+		-->
+		<link rel="preconnect" href="https://openwrt.org" crossorigin>
 		<link rel="dns-prefetch" href="https://openwrt.org">
+		<link rel="preconnect" href="https://downloads.openwrt.org" crossorigin>
 		<link rel="dns-prefetch" href="https://downloads.openwrt.org">
 
-
-		<!-- External Includes  (copied in local) ------------------------------------>
-		<link rel="stylesheet" href="static/css/bootstrap_5.3.3.min.css">
-		<link rel="stylesheet" href="static/lib/fontawesome-free-6.7.2/css/all.min.css" />		
-		<link rel="stylesheet" href="static/lib/tabulator-6.3.0/css/tabulator.min.css" >
-
-		<script src="static/js/jquery_v3.7.1.min.js"></script>
-		<script src="static/lib/tabulator-6.3.0/js/tabulator.min.js"></script>
-		<script src="static/js/snarkdown.umd.js"></script>
-		<!-- <script src="static/js/xlsx.mini.min.js"></script> -->
-
-
-		<!-- Internal Includes -------------------------------------------------------->
-		<!-- 
-		<link rel="stylesheet" href="static/css/toh.css" >
-		<script src="static/js/toh_conf.js"></script>
-		<script src="static/js/toh_main.js"></script> 
+		<!-- Start the 4MB device list before anything else can queue in front
+			of it. It used to wait for jQuery, Tabulator, eleven more scripts
+			and two round trips to downloads.openwrt.org - about 5.5s in.
+			toh_main.js picks this up, and falls back to its own request.
 		-->
-
-		<!-- Internal Includes (using today date cache) ------------------------------>
 		<script>
-			// force cache update each day ----------------------
-			let cache = new Date().toISOString().slice(0, 10);
-			//allow to use ?cache= to force reload assets
-			const urlCache = new URLSearchParams(window.location.search).get('cache');
-			cache  += urlCache ? '-' + urlCache : '';
-		
-			let filesToUpdate = [
-				{ type: 'link', href: 'static/css/toh.css' },
-				{ type: 'script', src: 'static/js/toh_conf.js' },
-				{ type: 'script', src: 'static/js/toh_main.js' }
-			];
-		
-			filesToUpdate.forEach(file => {
-				const element = document.createElement(file.type);				
-				if (file.type === 'link') {
-					element.rel = 'stylesheet';
-					element.href = file.href + '?c=' + cache;
-				}
-				else if (file.type === 'script') {
-					element.src = file.src + '?c=' + cache;
-					element.async=false;
-				}
-				document.head.appendChild(element);
-			});
+			window.__tohData = fetch('https://openwrt.org/toh.json', {credentials:'omit'})
+									.then(function(r){ return r.json(); });
+			window.__tohData.catch(function(){});	// re-caught at the real call site
+		</script>
+
+
+		<!-- Stylesheets and scripts ------------------------------------------
+			Written out as plain tags on purpose. These used to be appended to
+			document.head by an inline script, which hid all twelve URLs from the
+			browser's preload scanner: it reads raw HTML ahead of the parser but
+			does not run JavaScript, so nothing was requested until jQuery and
+			Tabulator had downloaded AND compiled - measured at 3.2s in, against
+			174ms for these tags.
+
+			'defer' gives the same ordering guarantee the old element.async=false
+			gave (document order, all of them after the parse), and unlike an
+			injected script it also holds DOMContentLoaded until the app exists.
+
+			Two real ordering constraints, both satisfied by document order:
+			jQuery before toh_util.js ($.fn.shake at parse time), and Tabulator
+			before toh_table.js (Tabulator.extendModule at parse time).
+		-->
+		<link rel="stylesheet" href="static/lib/tabulator-6.3.0/css/tabulator.min.css?v=a46d8051">
+		<link rel="stylesheet" href="static/css/toh.css?v=446329a8">
+
+		<script defer src="static/js/jquery_v3.7.1.min.js?v=fc9a93dd"></script>
+		<script defer src="static/lib/tabulator-6.3.0/js/tabulator.min.js?v=6625895a"></script>
+		<script defer src="static/js/toh_conf.js?v=d09229f1"></script>
+		<script defer src="static/js/toh_util.js?v=50cba9c2"></script>
+		<script defer src="static/js/toh_table.js?v=2a643377"></script>
+		<script defer src="static/js/toh_filters.js?v=bff60836"></script>
+		<script defer src="static/js/toh_views.js?v=36cc66b7"></script>
+		<script defer src="static/js/toh_favorites.js?v=fef08a63"></script>
+		<script defer src="static/js/toh_device_url.js?v=2b27f036"></script>
+		<script defer src="static/js/toh_compare.js?v=7bcbe5a9"></script>
+		<script defer src="static/js/toh_pages.js?v=176cb424"></script>
+		<script defer src="static/js/toh_cards.js?v=e80625de"></script>
+		<script defer src="static/js/toh_main.js?v=a846886c"></script>
+
+		<!-- Theme ------------------------------------------------------------------
+			Runs before first paint so a dark visitor never sees a white flash.
+			Kept inline and dependency-free for the same reason.
+		-->
+		<script>
+			(function(){
+				var stored=null;
+				try { stored=localStorage.getItem('toh_theme'); } catch(e) {}
+				var dark = stored ? stored === 'dark'
+								  : window.matchMedia('(prefers-color-scheme: dark)').matches;
+				document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+			})();
 		</script>
 
 	</head>
 	<body>
 
+		<!-- Icon sprite -----------------------------------------------------------------
+			Lucide icons (ISC licence), inlined so they are painted before toh.css and
+			toh_main.js have even been requested (the boot overlay needs them).
+			Regenerate with:  node tools/gen-icon-sprite.mjs <lucide-static>/icons
+		-->
+		<svg xmlns="http://www.w3.org/2000/svg" class="toh-icon-sprite" aria-hidden="true" focusable="false">
+	<defs>
+		<symbol id="i-book-open" viewBox="0 0 24 24"><path d="M12 5v16" /><path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z" /></symbol>
+		<symbol id="i-camera" viewBox="0 0 24 24"><path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z" /><circle cx="12" cy="13" r="3" /></symbol>
+		<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
+		<symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
+		<symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></symbol>
+		<symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></symbol>
+		<symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></symbol>
+		<symbol id="i-circle-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></symbol>
+		<symbol id="i-circle-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6" /><path d="m9 9 6 6" /></symbol>
+		<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></symbol>
+		<symbol id="i-cloud-download" viewBox="0 0 24 24"><path d="M12 13v8l-4-4" /><path d="m12 21 4-4" /><path d="M4.393 15.269A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.436 8.284" /></symbol>
+		<symbol id="i-code" viewBox="0 0 24 24"><path d="m16 18 6-6-6-6" /><path d="m8 6-6 6 6 6" /></symbol>
+		<symbol id="i-cpu" viewBox="0 0 24 24"><path d="M12 20v2" /><path d="M12 2v2" /><path d="M17 20v2" /><path d="M17 2v2" /><path d="M2 12h2" /><path d="M2 17h2" /><path d="M2 7h2" /><path d="M20 12h2" /><path d="M20 17h2" /><path d="M20 7h2" /><path d="M7 20v2" /><path d="M7 2v2" /><rect x="4" y="4" width="16" height="16" rx="2" /><rect x="8" y="8" width="8" height="8" rx="1" /></symbol>
+		<symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M3 5V19A9 3 0 0 0 21 19V5" /><path d="M3 12A9 3 0 0 0 21 12" /></symbol>
+		<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" /></symbol>
+		<symbol id="i-ellipsis" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" /></symbol>
+		<symbol id="i-external-link" viewBox="0 0 24 24"><path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></symbol>
+		<symbol id="i-factory" viewBox="0 0 24 24"><path d="M12 16h.01" /><path d="M16 16h.01" /><path d="M3 19a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5a.5.5 0 0 0-.769-.422l-4.462 2.844A.5.5 0 0 1 15 10.5v-2a.5.5 0 0 0-.769-.422L9.77 10.922A.5.5 0 0 1 9 10.5V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z" /><path d="M8 16h.01" /></symbol>
+		<symbol id="i-file-down" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /><path d="M14 2v5a1 1 0 0 0 1 1h5" /><path d="M12 18v-6" /><path d="m9 15 3 3 3-3" /></symbol>
+		<symbol id="i-filter" viewBox="0 0 24 24"><path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z" /></symbol>
+		<symbol id="i-git-branch" viewBox="0 0 24 24"><path d="M15 6a9 9 0 0 0-9 9V3" /><circle cx="18" cy="6" r="3" /><circle cx="6" cy="18" r="3" /></symbol>
+		<symbol id="i-git-commit-horizontal" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><line x1="3" x2="9" y1="12" y2="12" /><line x1="15" x2="21" y1="12" y2="12" /></symbol>
+		<symbol id="i-hard-drive" viewBox="0 0 24 24"><path d="M10 16h.01" /><path d="M2.212 11.577a2 2 0 0 0-.212.896V18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5.527a2 2 0 0 0-.212-.896L18.55 5.11A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" /><path d="M21.946 12.013H2.054" /><path d="M6 16h.01" /></symbol>
+		<symbol id="i-heart" viewBox="0 0 24 24"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" /></symbol>
+		<symbol id="i-image" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></symbol>
+		<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></symbol>
+		<symbol id="i-landmark" viewBox="0 0 24 24"><path d="M10 18v-7" /><path d="M11.119 2.205a2 2 0 0 1 1.762 0l7.84 3.846A.5.5 0 0 1 20.5 7h-17a.5.5 0 0 1-.22-.949z" /><path d="M14 18v-7" /><path d="M18 18v-7" /><path d="M3 22h18" /><path d="M6 18v-7" /></symbol>
+		<symbol id="i-layers" viewBox="0 0 24 24"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z" /><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12" /><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17" /></symbol>
+		<symbol id="i-lightbulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /><path d="M9 18h6" /><path d="M10 22h4" /></symbol>
+		<symbol id="i-list" viewBox="0 0 24 24"><path d="M3 5h.01" /><path d="M3 12h.01" /><path d="M3 19h.01" /><path d="M8 5h13" /><path d="M8 12h13" /><path d="M8 19h13" /></symbol>
+		<symbol id="i-loader-circle" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></symbol>
+		<symbol id="i-memory-stick" viewBox="0 0 24 24"><path d="M12 12v-2" /><path d="M12 18v-2" /><path d="M16 12v-2" /><path d="M16 18v-2" /><path d="M2 11h1.5" /><path d="M20 18v-2" /><path d="M20.5 11H22" /><path d="M4 18v-2" /><path d="M8 12v-2" /><path d="M8 18v-2" /><rect x="2" y="6" width="20" height="10" rx="2" /></symbol>
+		<symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" /></symbol>
+		<symbol id="i-network" viewBox="0 0 24 24"><rect x="16" y="16" width="6" height="6" rx="1" /><rect x="2" y="16" width="6" height="6" rx="1" /><rect x="9" y="2" width="6" height="6" rx="1" /><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3" /><path d="M12 12V8" /></symbol>
+		<symbol id="i-panel-left-close" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M9 3v18" /><path d="m16 15-3-3 3-3" /></symbol>
+		<symbol id="i-panel-left-open" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M9 3v18" /><path d="m14 9 3 3-3 3" /></symbol>
+		<symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /><path d="m15 5 4 4" /></symbol>
+		<symbol id="i-rotate-ccw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></symbol>
+		<symbol id="i-router" viewBox="0 0 24 24"><rect width="20" height="8" x="2" y="14" rx="2" /><path d="M6.01 18H6" /><path d="M10.01 18H10" /><path d="M15 10v4" /><path d="M17.84 7.17a4 4 0 0 0-5.66 0" /><path d="M20.66 4.34a8 8 0 0 0-11.31 0" /></symbol>
+		<symbol id="i-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34" /><circle cx="11" cy="11" r="8" /></symbol>
+		<symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /></symbol>
+		<symbol id="i-sliders-horizontal" viewBox="0 0 24 24"><path d="M10 5H3" /><path d="M12 19H3" /><path d="M14 3v4" /><path d="M16 17v4" /><path d="M21 12h-9" /><path d="M21 19h-5" /><path d="M21 5h-7" /><path d="M8 10v4" /><path d="M8 12H3" /></symbol>
+		<symbol id="i-square" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" /></symbol>
+		<symbol id="i-square-check" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="m9 12 2 2 4-4" /></symbol>
+		<symbol id="i-square-minus" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M8 12h8" /></symbol>
+		<symbol id="i-star" viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></symbol>
+		<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></symbol>
+		<symbol id="i-table-columns-split" viewBox="0 0 24 24"><path d="M14 14v2" /><path d="M14 20v2" /><path d="M14 2v2" /><path d="M14 8v2" /><path d="M2 15h8" /><path d="M2 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H2" /><path d="M2 9h8" /><path d="M22 15h-4" /><path d="M22 3h-2a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h2" /><path d="M22 9h-4" /><path d="M5 3v18" /></symbol>
+		<symbol id="i-tag" viewBox="0 0 24 24"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" /><circle cx="7.5" cy="7.5" r=".5" fill="currentColor" /></symbol>
+		<symbol id="i-triangle-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" /></symbol>
+		<symbol id="i-usb" viewBox="0 0 24 24"><circle cx="10" cy="7" r="1" /><circle cx="4" cy="20" r="1" /><path d="M4.7 19.3 19 5" /><path d="m21 3-3 1 2 2Z" /><path d="M9.26 7.68 5 12l2 5" /><path d="m10 14 5 2 3.5-3.5" /><path d="m18 12 1-1 1 1-1 1Z" /></symbol>
+		<symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></symbol>
+		<symbol id="i-wifi" viewBox="0 0 24 24"><path d="M12 20h.01" /><path d="M2 8.82a15 15 0 0 1 20 0" /><path d="M5 12.859a10 10 0 0 1 14 0" /><path d="M8.5 16.429a5 5 0 0 1 7 0" /></symbol>
+		<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></symbol>
+		<symbol id="i-zap" viewBox="0 0 24 24"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z" /></symbol>
+	</defs>
+</svg>
+
+
+		<!-- Boot overlay ----------------------------------------------------------------
+			Styled inline because toh.css is only injected once this markup is parsed.
+		-->
 		<style>
 			#toh-boot-overlay {
-				background: linear-gradient(135deg, #0099d9 0%, #0077b3 100%);
 				position: fixed;
-				top: 0;
-				left: 0;
-				width: 100%;
-				height: 100%;
+				inset: 0;
 				z-index: 9998;
-				opacity: 1;
-				animation: fade 5.0s ease forwards;
-			}
-			@keyframes fade {
-				0%     { opacity: 1; }
-				50% 	{ opacity: 1; }
-				100%   { opacity: 0.8; }
-			}
-			#toh-boot-overlay-bg{
-				height: 100%;
+				background: #fafafa;
 				display: flex;
 				flex-direction: column;
 				justify-content: center;
 				align-items: center;
-				padding-bottom: 120px;
+			}
+			:root[data-theme="dark"] #toh-boot-overlay {
+				background: #0d1117;
+			}
+			#toh-boot-overlay-bg {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				gap: 28px;
+				padding-bottom: 80px;
+			}
+			#toh-boot-logo img {
+				width: 200px;
+				/* the mark is two-tone for a dark header; flatten it per theme */
+				filter: brightness(0);
+				opacity: 0.85;
+				animation: toh-boot-float 2.4s ease-in-out infinite;
+			}
+			:root[data-theme="dark"] #toh-boot-logo img {
+				filter: brightness(0) invert(1);
+			}
+			@keyframes toh-boot-float {
+				0%, 100% { transform: translateY(0); }
+				50%      { transform: translateY(-10px); }
 			}
 			#toh-boot-span {
-				margin-top: 30px;
-				font-size: 15px;
+				display: flex;
+				align-items: center;
+				gap: 10px;
 				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-				color: #1e293b;
-				display: inline-block;
-				text-align: center;
-				background-color: rgba(255, 255, 255, 0.95);
-				padding: 20px 40px;
-				border-radius: 16px;
-				border: none;
-				min-width: 250px;
-				box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-				backdrop-filter: blur(10px);
+				font-size: 14px;
+				color: #6b7280;
 			}
-			#toh-boot-logo,
-			#toh-boot-logo IMG{
-				width: 280px;
+			#toh-boot-icon svg {
+				width: 18px;
+				height: 18px;
+				fill: none;
+				stroke: #2563eb;
+				stroke-width: 2;
+				stroke-linecap: round;
+				stroke-linejoin: round;
+				display: block;
+				animation: toh-spin 0.9s linear infinite;
 			}
-			#toh-boot-icon{
-				margin-bottom: 16px;
-				color: #0099d9;
-			}
-
-			#toh-boot-logo{
-				animation: 0.7s bounce 2s infinite;
-				filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.2));
-			}
-			@keyframes bounce {
-				0% {
-					transform: translateY(0);
-					animation-timing-function: ease-in;
-				}
-				15% {
-					transform: translateY(-50px);
-					animation-timing-function: ease-out;
-				}
-				50% {
-					transform: translateY(-70px);
-					animation-timing-function: ease-in;
-					opacity: 0.9;
-				}
-				85% {
-					transform: translateY(-50px);
-					animation-timing-function: ease-out;
-				}
-				100% {
-					transform: translateY(0);
-				}
+			@keyframes toh-spin {
+				to { transform: rotate(360deg); }
 			}
 		</style>
 
 		<div id="toh-boot-overlay">
 			<div id="toh-boot-overlay-bg">
-				<div id="toh-boot-logo"><img src="static/img/logo.svg" alt="Logo" /></div>
-				<span id="toh-boot-span">
-					<div id="toh-boot-icon"><i class="fa-solid fa-arrows-rotate fa-spin fa-2x"></i></div>
-					<div id="toh-load-text">Loading page...</div>
-				</span>
+				<div id="toh-boot-logo"><img src="static/img/logo.svg?v=b7871e6b" alt="OpenWrt" /></div>
+				<div id="toh-boot-span">
+					<span id="toh-boot-icon"><svg aria-hidden="true"><use href="#i-loader-circle"></use></svg></span>
+					<span id="toh-load-text">Loading page&hellip;</span>
+				</div>
 			</div>
 		</div>
 
 
+		<a href="#toh-main" class="toh-skip">Skip to the table</a>
+
 		<div id="toh-page">
-			
-			<div class="container-fluid">
 
-				<div id="toh-header" class="row">
-					<div id="toh-header-bg">
-						<div id="toh-header-loading"><i class="fa-solid fa-arrows-rotate fa-spin"></i></div>
-						<span id="toh-dev-badge" class="badge bg-danger toh-hidden"><span class="js-toh-app " data-prop="branch"></span> v<b class="js-toh-app" data-prop="version">-</b></span>
-						<div id="toh-header-logo"><a href="https://openwrt.org" title="OpenWrt Site"><img src="static/img/logo.svg" alt="Logo" /></a></div>
-						<div id="toh-header-title"><h1><a href="#" title="Table Of Hardware">Table Of Hardware</a> </h1></div>
-						<div id="toh-header-right">
+			<!-- App bar ------------------------------------------------------------- -->
+			<header id="toh-appbar" role="banner">
+				<div class="toh-appbar-inner">
 
-							<div id="toh-header-search" class="d-flex align-items-center">
-								<div class="mb-0" id="toh-search-icon">
-									<i class="fa-solid fa-magnifying-glass"></i>
-								</div>
-								<span id="toh-search" class="toh-hidden">
-							
-									<div class="mb-0 toh-search-group">
-										<input type="text" class="form-control toh-search-input" id="toh-search-input-model" data-field="model" placeholder="Model...">
-										<span class="toh-search-clear" id="toh-search-clear-model"><i class="fa-solid fa-circle-xmark"></i></span>
-									</div>
-									<div class="mb-0 toh-search-group">
-										<input type="text" class="form-control toh-search-input" id="toh-search-input-brand" data-field="brand" placeholder="Brand...">
-										<span class="toh-search-clear" id="toh-search-clear-brand"><i class="fa-solid fa-circle-xmark"></i></span>
-									</div>
+					<button type="button" id="toh-sidebar-toggle" title="Show/hide filters" aria-label="Show or hide filters" aria-expanded="false" aria-controls="toh-sidebar">
+						<svg class="toh-ico toh-ico-sb-open" aria-hidden="true"><use href="#i-panel-left-open"></use></svg>
+						<svg class="toh-ico toh-ico-sb-close" aria-hidden="true"><use href="#i-panel-left-close"></use></svg>
+					</button>
+
+					<a id="toh-appbar-brand" href="https://openwrt.org" title="OpenWrt site"><img src="static/img/logo.svg?v=b7871e6b" alt="OpenWrt" /></a>
+					<a id="toh-appbar-title" href="#" title="Table of Hardware">Table of Hardware</a>
+
+					<span id="toh-dev-badge" class="toh-hidden" title="Click to dismiss"><span class="js-toh-app" data-prop="branch"></span> v<b class="js-toh-app" data-prop="version">-</b></span>
+
+					<div class="toh-appbar-right">
+						<span id="toh-header-loading" title="Loading"><svg class="toh-ico toh-ico-spin" aria-hidden="true"><use href="#i-loader-circle"></use></svg></span>
+						<button type="button" id="toh-theme-toggle" title="Switch between light and dark" aria-label="Switch between light and dark">
+							<svg class="toh-ico toh-ico-theme-light" aria-hidden="true"><use href="#i-sun"></use></svg>
+							<svg class="toh-ico toh-ico-theme-dark" aria-hidden="true"><use href="#i-moon"></use></svg>
+						</button>
+						<a class="toh-appbar-link" href="https://github.com/openwrt/toh-openwrt-org/" target="_blank" rel="noopener">GitHub <svg class="toh-ico" aria-hidden="true"><use href="#i-external-link"></use></svg></a>
+					</div>
+
+				</div>
+
+				<!-- What is currently narrowing the table, once the hero has scrolled
+				     away. Filled in by tohUpdateSummary(); the row only takes up space
+				     while BODY carries .toh-summary-on. -->
+				<div id="toh-summary" aria-live="polite">
+					<div class="toh-summary-inner">
+						<button type="button" id="toh-summary-back" title="Back to the search">
+							<svg class="toh-ico" aria-hidden="true"><use href="#i-search"></use></svg>
+						</button>
+						<div id="toh-summary-chips"></div>
+						<span id="toh-summary-count"></span>
+						<div id="toh-summary-actions">
+							<a href="#" class="toh-but toh-but-clearallfilters toh-hidden" id="toh-summary-clear" title="Clear every filter and search"><svg class="toh-ico" aria-hidden="true"><use href="#i-x"></use></svg> Clear</a>
+							<a href="#" class="toh-but" id="toh-summary-adv"><svg class="toh-ico" aria-hidden="true"><use href="#i-sliders-horizontal"></use></svg> Advanced</a>
+						</div>
+					</div>
+				</div>
+			</header>
+
+
+			<div id="toh-shell">
+
+				<!-- Hero : the one question most visitors arrive with ---------------
+					Sits in the content column, above the table it searches. The
+					sidebar starts on the row below it rather than running the whole
+					height of the page beside it.
+				-->
+				<div id="toh-hero">
+					<h1>Find your router</h1>
+					<p id="toh-lede">Check whether a device runs OpenWrt, which release supports it, and what is inside it.</p>
+
+					<div class="toh-hero-searchrow">
+					<div id="toh-search" class="toh-herosearch">
+						<span id="toh-search-icon"><svg class="toh-ico" aria-hidden="true"><use href="#i-search"></use></svg></span>
+						<!-- One box, not a model box and a Manufacturer box: the search
+						     matches brand and model together, so the second field only
+						     asked visitors to decide which word goes where. -->
+						<div class="toh-search-group">
+							<input type="text" class="toh-search-input" id="toh-search-input-model" data-field="model" placeholder="Search by brand or model, e.g. Archer C7&hellip;">
+							<button type="button" class="toh-search-clear" id="toh-search-clear-model" aria-label="Clear the search"><svg class="toh-ico" aria-hidden="true"><use href="#i-circle-x"></use></svg></button>
+						</div>
+					</div>
+
+					<a href="#" class="toh-but" id="toh-adv-open"><svg class="toh-ico" aria-hidden="true"><use href="#i-sliders-horizontal"></use></svg> Advanced search</a>
+					<a href="#" class="toh-but" id="toh-wiz-open"><svg class="toh-ico" aria-hidden="true"><use href="#i-circle-help"></use></svg> Help me choose</a>
+					</div>
+
+					<div id="toh-stats">
+						<div class="toh-stat">
+								<span class="toh-stat-icon"><svg class="toh-ico" aria-hidden="true"><use href="#i-router"></use></svg></span>
+								<span class="toh-stat-body">
+									<span class="toh-stat-value" id="toh-stat-devices">&mdash;</span>
+									<span class="toh-stat-label">Devices</span>
 								</span>
 							</div>
-
-							<div id="toh-header-count"><span class="toh-count-rows-full"></span> devices</div>
-
-						</div>
+						<div class="toh-stat">
+								<span class="toh-stat-icon is-ok"><svg class="toh-ico" aria-hidden="true"><use href="#i-circle-check"></use></svg></span>
+								<span class="toh-stat-body">
+									<span class="toh-stat-value" id="toh-stat-supported">&mdash;</span>
+									<span class="toh-stat-label">On a current release</span>
+								</span>
+							</div>
+						<div class="toh-stat">
+								<span class="toh-stat-icon"><svg class="toh-ico" aria-hidden="true"><use href="#i-layers"></use></svg></span>
+								<span class="toh-stat-body">
+									<span class="toh-stat-value" id="toh-stat-targets">&mdash;</span>
+									<span class="toh-stat-label">Targets</span>
+								</span>
+							</div>
+						<div class="toh-stat">
+								<span class="toh-stat-icon"><svg class="toh-ico" aria-hidden="true"><use href="#i-factory"></use></svg></span>
+								<span class="toh-stat-body">
+									<span class="toh-stat-value" id="toh-stat-brands">&mdash;</span>
+									<span class="toh-stat-label">Manufacturers</span>
+								</span>
+							</div>
 					</div>
 				</div>
 
 
-				<div id="toh-main" class="toh-box">
-					
-					<div id="toh-top">
-						<!-- Filters ------------------- -->
-						<div id="toh-top-filters" class="toh-top-block">
+				<!-- Sidebar : filters ------------------------------------------------ -->
+				<aside id="toh-sidebar" aria-label="Filters">
+					<div id="toh-sidebar-inner">
 
-							<div id="toh-filters-title" class="toh-top-title">
-								<div id="toh-filters-upresets" class="toh-upresets"><span class="toh-upresets-title"><a href="#" title=""><i class="fa-regular fa-circle-question"></i></a></span><span class="toh-filters-presets toh-top-title-presets toh-top-title-upresets toh-upresets-content"></span></div>
-								<span class="toh-top-title-left"><a href="#" class="toh-top-title-toggle toh-filters-but-toggle" title="Show/Hide Filters Settings"><i class="fa-fw fa-solid fa-caret-right"></i>Filters :</a> <a class='toh-filters-clear toh-but-clearfilters' title='Clear Filters'><i class='fa fa-solid fa-xmark'></i> Clear</a></span>
-							</div>
-							
-							<div id="toh-filters-container" class="toh-top-container toh-hidden">
+						<div id="toh-top-filters">
 
-								<div id="toh-filters-options">
-									<div class="toh-options-title"><a href="#" title="Automatically show columns related to the selected features">Links Columns View <i class="fa-regular fa-circle-question"></i></a></div>
-										<div class="toh-options-radios">
-											<div><input type="radio" name="filtcol" value="none" id="toh-radio-opt-none" checked="true">	<label for="toh-radio-opt-none">Don't change</label></div>
-											<div><input type="radio" name="filtcol" value="add" id="toh-radio-opt-add">					<label for="toh-radio-opt-add">Add filtered</label></div>
-											<div><input type="radio" name="filtcol" value="repl" id="toh-radio-opt-repl">					<label for="toh-radio-opt-repl">Only filtered</label></div>											 
-										</div>									
-								</div>
-	
-								<div id="toh-filters-presets" class="">
-									<div class="toh-filters-subtitle">Presets:</div>
-									<div class="toh-filters-list toh-filters-presets" ></div>
-								</div>
-								
-								<div id="toh-filters-features" class="toh-filters">
-									<div class="toh-filters-list row" >									
-											<div class="col-md-12">
-												<div id="toh-filters-features-content" class="toh-filters-list-multi"></div>
-											</div>
-									</div>
-								</div>
-
-							</div>
-
-						</div>
-					
-						<!-- Views ------------------- -->						
-						<div id="toh-top-cols" class="toh-top-block">
-
-							<div id="toh-cols-title" class="toh-top-title">
-								<div id="toh-cols-upresets" class="toh-upresets"><span class="toh-upresets-title"><a href="#" title=""><i class="fa-regular fa-circle-question"></i></a></span><span class="toh-top-title-presets toh-top-title-upresets toh-upresets-content"></span></div>
-								<span class="toh-top-title-left"><a href="#" class="toh-top-title-toggle toh-cols-but-toggle" title="Show/Hide Columns Settings"><i class="fa-fw fa-solid fa-caret-right"></i>Columns :</a></span><span id="toh-cols-presets" class="toh-top-title-presets"></span>								
-							</div>
-
-							<div id="toh-cols-container" class="toh-top-container toh-hidden">
-								<div class="toh-cols-list row">
-									<div class="col-md-12">
-										<div id="toh-cols-columns-content" class="toh-cols-list-multi"></div>
-									</div>
-								</div>
-							</div>
-
-						</div>
-
-						<div id="toh-upreset-popup-save" class="toh-hidden">
-							<input type="text" size="10" placeholder="name">
-							<div class="toh-desc-mini">(up to <b id="toh-upreset-popup-max">8</b> characters)</div>
-							<div><button class="toh-popup-button">Save (as Cookie)</button></div>
-						</div>
-
-						<!-- Buttons ------------------- -->						
-						<div id="toh-top-buttons">
-							<div class="toh-buttons-left">
-								<a href="#" class="toh-but toh-but-clearheadersorts"><i class="fa-solid fa-xmark"></i> Clear Header Sorts</a>
-							</div>
-							<div class="toh-buttons-right">
-								<a href="#" class="toh-but toh-but-clearfilters"><i class="fa-solid fa-xmark"></i> Clear Filters</a>
-								<a href="#" class="toh-but toh-but-clearheaderfilters"><i class="fa-solid fa-xmark"></i> Clear Header Filters</a>
-								<a href="#" class="toh-but toh-but-clearallfilters"><i class="fa-solid fa-xmark"></i> Clear All Filters</a>
-							</div>
-						</div>
-
-					</div>
-		
-					<!-- Main Table ------------------- -->		
-					<div id='toh-table-container'>
-						<div id='toh-table'></div>		
-					</div>
-
-					<div id="toh-bot">
-						<div id="toh-bot-buttons">
-								<span id="toh-bot-but-title">Export Table Data :</span> 
-								<select name="dlrange">
-									<option value="all">All</option>
-									<option value="active" selected>Filtered</option>
-								</select> 
-								rows, with <span class="toh-count-cols-full"></span> shown columns 
-								<span id="toh-bot-but-group">
-									<a href="#" class="toh-but toh-but-download" data-dltype="csv" title="Download as CSV"><i class="fa-solid fa-download"></i> CSV</a> 
-									<!-- <a href="#" class="toh-but toh-but-download" data-dltype="xlsx" title="Download as Excel"><i class="fa-solid fa-download"></i> Excel (.xlsx)</a>  -->
-									<a href="#" class="toh-but toh-but-download" data-dltype="json" title="Download as JSON"><i class="fa-solid fa-download"></i> JSON</a> 
+							<div id="toh-filters-title" class="toh-side-title">
+								<a href="#" class="toh-side-title-toggle toh-filters-but-toggle" title="Show/hide filters" role="button" aria-expanded="true" aria-controls="toh-filters-container">
+									<svg class="toh-ico toh-side-caret" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
+									<svg class="toh-ico" aria-hidden="true"><use href="#i-sliders-horizontal"></use></svg>
+									Filters
+								</a>
+								<span id="toh-favorites">
+									<a href="#" id="toh-fav-pin" title="Always show my favourites, whatever is filtered">
+										<svg class="toh-ico" aria-hidden="true"><use href="#i-heart"></use></svg>
+										<b id="toh-fav-count">0</b>
+									</a>
+									<a href="#" id="toh-fav-clear" class="toh-hidden" title="Forget every favourite">
+										<svg class="toh-ico" aria-hidden="true"><use href="#i-x"></use></svg>
+									</a>
+									<span id="toh-fav-status" class="toh-visually-hidden" role="status" aria-live="polite"></span>
 								</span>
+								<a class="toh-filters-clear toh-but-clearfilters" title="Clear filters"><svg class="toh-ico" aria-hidden="true"><use href="#i-x"></use></svg> Clear</a>
+							</div>
+
+							<div id="toh-filters-container" class="toh-side-container toh-hidden">
+
+								<div id="toh-filters-presets" class="toh-side-section">
+									<div class="toh-side-subtitle">
+										<span>Presets</span>
+										<span id="toh-filters-upresets" class="toh-upresets">
+											<span class="toh-upresets-label">Yours</span>
+											<span class="toh-upresets-content toh-filters-presets"></span>
+											<span class="toh-upresets-title">
+												<a href="#" id="toh-upresets-help" class="toh-upresets-help" aria-label="What the numbered slots do" aria-expanded="false" aria-controls="toh-upresets-hint"><svg class="toh-ico" aria-hidden="true"><use href="#i-circle-help"></use></svg></a>
+											</span>
+										</span>
+									</div>
+									<div id="toh-upresets-hint" class="toh-hint toh-hidden" role="note">
+										<svg class="toh-ico" aria-hidden="true"><use href="#i-circle-help"></use></svg>
+										<span>The numbered slots hold filter sets of your own. <b>Click</b> a number to load it, <b>Shift-click</b> to save what is selected right now, <b>Alt-click</b> to delete.</span>
+									</div>
+									<div class="toh-filters-list toh-filters-presets"></div>
+								</div>
+
+								<div id="toh-filters-features" class="toh-filters toh-side-section">
+									<div class="toh-filters-list">
+										<div id="toh-filters-features-content" class="toh-filters-list-multi"></div>
+									</div>
+								</div>
+
+								<div id="toh-filters-options" class="toh-side-section">
+									<div class="toh-options-title"><a href="#" title="Automatically show columns related to the selected features">Links columns view <svg class="toh-ico" aria-hidden="true"><use href="#i-circle-help"></use></svg></a></div>
+									<div class="toh-options-radios">
+										<div><input type="radio" name="filtcol" value="none" id="toh-radio-opt-none" checked="true"> <label for="toh-radio-opt-none">Don't change</label></div>
+										<div><input type="radio" name="filtcol" value="add"  id="toh-radio-opt-add">              <label for="toh-radio-opt-add">Add filtered</label></div>
+										<div><input type="radio" name="filtcol" value="repl" id="toh-radio-opt-repl">             <label for="toh-radio-opt-repl">Only filtered</label></div>
+									</div>
+								</div>
+
+							</div>
 						</div>
+
+					</div>
+				</aside>
+
+				<div id="toh-sidebar-scrim"></div>
+
+
+				<!-- Content ---------------------------------------------------------- -->
+				<main id="toh-content">
+
+					<!-- Collections : named starting points over the same filters ------ -->
+					<div id="toh-collections" class="toh-hidden">
+						<h2>Or start from a shortlist</h2>
+						<div id="toh-collections-list"></div>
+					</div>
+
+
+					<section id="toh-main" class="toh-card">
+
+						<!-- Toolbar -------------------------------------------------- -->
+						<div id="toh-toolbar">
+
+							<div id="toh-toolbar-count" role="status" aria-live="polite"><span class="toh-count-rows-full"></span><span class="toh-toolbar-count-label">devices</span></div>
+
+							<div id="toh-toolbar-actions">
+
+								<!-- these only appear while the matching filter/sort is active -->
+								<a href="#" class="toh-but toh-but-clearheadersorts" title="Clear header sorts"><svg class="toh-ico" aria-hidden="true"><use href="#i-rotate-ccw"></use></svg> Sorts</a>
+								<a href="#" class="toh-but toh-but-clearfilters" title="Clear the sidebar filters"><svg class="toh-ico" aria-hidden="true"><use href="#i-x"></use></svg> Filters</a>
+								<a href="#" class="toh-but toh-but-clearheaderfilters" title="Clear the column header filters"><svg class="toh-ico" aria-hidden="true"><use href="#i-x"></use></svg> Header filters</a>
+								<a href="#" class="toh-but toh-but-clearallfilters" title="Clear all filters"><svg class="toh-ico" aria-hidden="true"><use href="#i-x"></use></svg> All filters</a>
+
+								<!-- Row density: how many devices fit on one screen -->
+								<div id="toh-density" role="group" aria-label="Row height">
+									<button type="button" class="toh-density-but" data-density="comfortable" aria-pressed="true" title="Roomier rows">Comfortable</button>
+									<button type="button" class="toh-density-but" data-density="compact" aria-pressed="false" title="More devices per screen">Compact</button>
+								</div>
+
+								<!-- Columns ---------------------------------------------- -->
+								<div id="toh-top-cols" class="toh-menu">
+									<div id="toh-cols-title">
+										<a href="#" class="toh-but toh-menu-but toh-cols-but-toggle" title="Show/hide the column picker" role="button" aria-expanded="false" aria-controls="toh-cols-container"><svg class="toh-ico" aria-hidden="true"><use href="#i-table-columns-split"></use></svg> Columns <svg class="toh-ico toh-menu-caret" aria-hidden="true"><use href="#i-chevron-down"></use></svg></a>
+									</div>
+									<div id="toh-cols-container" class="toh-menu-panel toh-hidden">
+										<div class="toh-menu-panel-head">
+											<span id="toh-cols-presets" class="toh-top-title-presets"></span>
+											<span id="toh-cols-upresets" class="toh-upresets">
+												<span class="toh-upresets-label">Yours</span>
+												<span class="toh-top-title-presets toh-top-title-upresets toh-upresets-content"></span>
+												<span class="toh-upresets-title"><a href="#" id="toh-cols-upresets-help" class="toh-upresets-help" aria-label="What the numbered slots do" aria-expanded="false" aria-controls="toh-cols-upresets-hint"><svg class="toh-ico" aria-hidden="true"><use href="#i-circle-help"></use></svg></a></span>
+											</span>
+										</div>
+										<div id="toh-cols-upresets-hint" class="toh-hint toh-hidden" role="note">
+											<svg class="toh-ico" aria-hidden="true"><use href="#i-circle-help"></use></svg>
+											<span>The numbered slots hold column sets of your own. <b>Click</b> a number to load it, <b>Shift-click</b> to save the columns shown right now, <b>Alt-click</b> to delete.</span>
+										</div>
+										<div class="toh-cols-list">
+											<div id="toh-cols-columns-content" class="toh-cols-list-multi"></div>
+										</div>
+									</div>
+								</div>
+
+								<!-- Export ----------------------------------------------- -->
+								<div id="toh-top-export" class="toh-menu">
+									<a href="#" class="toh-but toh-menu-but toh-export-but-toggle" title="Export the table data" role="button" aria-expanded="false" aria-controls="toh-bot"><svg class="toh-ico" aria-hidden="true"><use href="#i-download"></use></svg> Export <svg class="toh-ico toh-menu-caret" aria-hidden="true"><use href="#i-chevron-down"></use></svg></a>
+
+									<div id="toh-bot" class="toh-menu-panel toh-menu-panel-right toh-hidden">
+										<div id="toh-bot-buttons">
+											<div id="toh-bot-but-title">Export table data</div>
+											<select name="dlrange">
+												<option value="all">All</option>
+												<option value="active" selected>Filtered</option>
+											</select>
+											<div class="toh-export-note">rows, with <span class="toh-count-cols-full"></span> shown columns</div>
+											<div id="toh-bot-but-group">
+												<a href="#" class="toh-but toh-but-download" data-dltype="csv" title="Download as CSV"><svg class="toh-ico" aria-hidden="true"><use href="#i-file-down"></use></svg> CSV</a>
+												<a href="#" class="toh-but toh-but-download" data-dltype="json" title="Download as JSON"><svg class="toh-ico" aria-hidden="true"><use href="#i-file-down"></use></svg> JSON</a>
+											</div>
+										</div>
+									</div>
+								</div>
+
+							</div>
+						</div>
+
+						<!-- Main table ----------------------------------------------- -->
+						<div id='toh-table-container'>
+							<div id='toh-table'></div>
+						</div>
+
+						<!-- The same rows as cards, for screens too narrow for any
+						     table. Tabulator still filters, sorts and paginates; this
+						     only draws what it hands back. See tohRenderCards(). -->
+						<div id="toh-cards" aria-live="polite">
+							<div id="toh-cards-list"></div>
+							<div id="toh-cards-pager">
+								<button type="button" class="toh-but" id="toh-cards-prev">
+									<svg class="toh-ico" aria-hidden="true"><use href="#i-chevron-left"></use></svg> Previous
+								</button>
+								<span id="toh-cards-page"></span>
+								<button type="button" class="toh-but" id="toh-cards-next">
+									Next <svg class="toh-ico" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
+								</button>
+							</div>
+						</div>
+
+					</section>
+
+
+					<!-- Comparison ------------------------------------------------------
+						Shown instead of the table, and addressable as ?compare=id,id so a
+						comparison can be linked to.
+					-->
+					<section id="toh-compare-panel" class="toh-card toh-hidden" role="region" aria-label="Device comparison" aria-hidden="true">
+						<div id="toh-compare-head">
+							<div>
+								<h2>Compare devices</h2>
+								<p id="toh-compare-sub"><b id="toh-compare-diffcount">0</b> of <b id="toh-compare-rowcount">0</b> compared fields differ &mdash; those rows are highlighted</p>
+							</div>
+							<div id="toh-compare-opts">
+								<label class="toh-switch"><input type="checkbox" id="toh-compare-diffonly"> Only rows that differ</label>
+								<label class="toh-switch"><input type="checkbox" id="toh-compare-ref"> Compare against the first device</label>
+								<a href="#" class="toh-but toh-but-primary" id="toh-compare-close"><svg class="toh-ico" aria-hidden="true"><use href="#i-chevron-left"></use></svg> Back to the table</a>
+							</div>
+						</div>
+						<div id="toh-compare-body"></div>
+					</section>
+
+
+					<!-- Advanced search ------------------------------------------------ -->
+					<section id="toh-adv-panel" class="toh-card toh-hidden" role="region" aria-label="Advanced search" aria-hidden="true">
+						<div id="toh-adv-head">
+							<div>
+								<h2>Advanced search</h2>
+								<p id="toh-adv-sub" role="status" aria-live="polite"><b id="toh-adv-count">0</b> devices match</p>
+							</div>
+							<div id="toh-adv-actions">
+								<a href="#" class="toh-but" id="toh-adv-close"><svg class="toh-ico" aria-hidden="true"><use href="#i-x"></use></svg> Cancel</a>
+								<button type="button" class="toh-but toh-but-primary" id="toh-adv-apply">Show results</button>
+							</div>
+						</div>
+						<div id="toh-adv-body"></div>
+					</section>
+
+
+					<!-- Configurator ---------------------------------------------------
+						A different way into the same filters, for people who know what
+						they need rather than which model they want.
+					-->
+					<section id="toh-wiz-panel" class="toh-card toh-hidden" role="region" aria-label="Guided search" aria-hidden="true">
+						<div id="toh-wiz-head">
+							<div>
+								<h2>Help me choose</h2>
+								<p id="toh-wiz-sub"><span id="toh-wiz-stepno"></span> &middot; <b id="toh-wiz-count">0</b> devices left</p>
+							</div>
+							<div id="toh-wiz-actions">
+								<a href="#" class="toh-but" id="toh-wiz-close"><svg class="toh-ico" aria-hidden="true"><use href="#i-x"></use></svg> Cancel</a>
+								<button type="button" class="toh-but" id="toh-wiz-back">Back</button>
+								<button type="button" class="toh-but toh-but-primary" id="toh-wiz-next">Next</button>
+							</div>
+						</div>
+						<div id="toh-wiz-body"></div>
+					</section>
+
+
+					<!-- Manufacturer / chipset page ------------------------------------
+						Addressable as ?brand=... or ?chipset=...
+					-->
+					<section id="toh-facet-panel" class="toh-card toh-hidden" role="region" aria-label="Manufacturer or chipset" aria-hidden="true">
+						<div id="toh-facet-head">
+							<a href="#" class="toh-but" id="toh-facet-close"><svg class="toh-ico" aria-hidden="true"><use href="#i-x"></use></svg> Back to the table</a>
+						</div>
+						<div id="toh-facet-body"></div>
+					</section>
+
+
+					<div id="toh-upreset-popup-save" class="toh-hidden">
+						<input type="text" size="10" placeholder="name">
+						<div class="toh-desc-mini">(up to <b id="toh-upreset-popup-max">8</b> characters)</div>
+						<div><button class="toh-popup-button">Save (as cookie)</button></div>
 					</div>
 
 					<div id="toh-image-preview"></div>
 
-				</div>
 
+					<div id="toh-info">
 
-				<div id="toh-info" class="row">
-					
-					<div class="col-sm-12">
-						<div id="toh-tips" class="toh-box">
-							<h4><i class="fa-regular fa-lightbulb"></i> Tips</h4>
+						<div id="toh-tips" class="toh-card">
+							<h4><svg class="toh-ico" aria-hidden="true"><use href="#i-lightbulb"></use></svg> Tips</h4>
 							<ul>
-								<li>Access detailed information by clicking items in the Brand or Model column</li>
-								<li>Add multiple sorting criteria by holding Shift while clicking column headers</li>
-								<li>Reorder columns by dragging their headers left or right</li>
-								<li>Adjust column width by dragging the border between columns</li>
-								<li>View images by hovering over picture icons, or click them for a larger view</li>
-								<li>Sort a column by clicking its header (toggles between asc., desc., and no order)</li>
-								<li>Store/recall your own filters or column presets by using the right tabs (1, 2, 3)</li>
+								<li>Click a device's name to see everything about it: hardware, ports, downloads and links</li>
+								<li>Sort by clicking a column header; click again for the other direction, once more to turn it off</li>
+								<li>Hold Shift while clicking headers to sort by several columns at once</li>
+								<li>Drag a header to move the column; drag the border between two headers to resize it</li>
+								<li>Add the Image column from the Columns menu to preview device photos</li>
+								<li>Keep your own filter or column sets in the numbered slots: Shift-click saves, click loads, Alt-click deletes</li>
 							</ul>
 						</div>
-					</div>
 
-					<div class="col-sm-12">
-						<div id="toh-changelog" class="toh-box toh-hidden">
-							<div id="toh-changelog-desc">(This is only shown in Develop mode)</div>	
-							<h4><i class="fa-solid fa-list"></i> ChangeLog since latest release  <a href="https://github.com/openwrt/toh-openwrt-org/blob/develop/CHANGELOG.md" target="_blank"><i class="fa-solid fa-up-right-from-square"></i></a> </h4>
-							<div id="toh-changelog-latest" class="toh-changelog-list"></div>	
-							<hr>				
-							<h4><i class="fa-regular fa-clock"></i> Previous Releases</h4>
-							<div id="toh-changelog-previous" class="toh-changelog-list"></div>					
+						<div id="toh-changelog" class="toh-card toh-hidden">
+							<div id="toh-changelog-desc">(This is only shown in Develop mode)</div>
+							<h4><svg class="toh-ico" aria-hidden="true"><use href="#i-list"></use></svg> Changelog since latest release <a href="https://github.com/openwrt/toh-openwrt-org/blob/develop/CHANGELOG.md" target="_blank" rel="noopener"><svg class="toh-ico" aria-hidden="true"><use href="#i-external-link"></use></svg></a></h4>
+							<div id="toh-changelog-latest" class="toh-changelog-list"></div>
+							<hr>
+							<h4><svg class="toh-ico" aria-hidden="true"><use href="#i-clock"></use></svg> Previous releases</h4>
+							<div id="toh-changelog-previous" class="toh-changelog-list"></div>
 						</div>
+
 					</div>
 
-				</div>
 
+				</main>
 			</div>
 
-			<div id="toh-footer" class="row">
-				<div id="toh-footer-bg">
-					<div class="container">
-						This project (version <b class="js-toh-app" data-prop="version">-</b>) is available on <a href="https://github.com/openwrt/toh-openwrt-org/" target="_blank" rel="noopener">GitHub</a>. Made with <i class="fa-solid fa-heart" style="color: #ff6b6b;"></i> by <a href="https://github.com/soif" target="_blank" rel="noopener">Soif</a> and all <a href="https://github.com/openwrt/toh-openwrt-org/graphs/contributors" target="_blank" rel="noopener">contributors</a>.
+			<!-- Footer : full width, so the page has a visible bottom edge --------- -->
+			<footer id="toh-footer" role="contentinfo">
+				<div class="toh-footer-inner">
+					<a href="#" id="toh-stats-open">Database statistics</a> &middot;
+					This project (version <b class="js-toh-app" data-prop="version">-</b>) is available on <a href="https://github.com/openwrt/toh-openwrt-org/" target="_blank" rel="noopener">GitHub</a>.
+					Made with <svg class="toh-ico toh-ico-heart" aria-hidden="true"><use href="#i-heart"></use></svg> by <a href="https://github.com/soif" target="_blank" rel="noopener">Soif</a> and all <a href="https://github.com/openwrt/toh-openwrt-org/graphs/contributors" target="_blank" rel="noopener">contributors</a>.
+				</div>
+			</footer>
+
+			<!-- Compare tray : rides above the page while devices are picked ------- -->
+			<!-- Device details on a phone: the same HTML the row popup shows, in a
+			     sheet instead of a box positioned against a cell -->
+			<div id="toh-sheet" class="toh-hidden" role="dialog" aria-modal="true" aria-label="Device details">
+				<div id="toh-sheet-scrim"></div>
+				<div id="toh-sheet-panel">
+					<button type="button" id="toh-sheet-close" title="Close" aria-label="Close">
+						<svg class="toh-ico" aria-hidden="true"><use href="#i-circle-x"></use></svg>
+					</button>
+					<div id="toh-sheet-body"></div>
+				</div>
+			</div>
+
+			<div id="toh-compare-tray" class="toh-hidden" role="region" aria-label="Devices picked to compare" aria-live="polite">
+				<div class="toh-compare-tray-inner">
+					<span id="toh-compare-label">Comparing <b id="toh-compare-count">0</b></span>
+					<div id="toh-compare-chips"></div>
+					<div id="toh-compare-tray-actions">
+						<a href="#" class="toh-but" id="toh-compare-reset">Clear</a>
+						<button type="button" class="toh-but toh-but-primary" id="toh-compare-open" disabled>
+							<svg class="toh-ico" aria-hidden="true"><use href="#i-table-columns-split"></use></svg> Compare
+						</button>
 					</div>
 				</div>
 			</div>
-
 		</div>
 	</body>
 </html>

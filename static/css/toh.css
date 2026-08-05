@@ -1,1150 +1,4267 @@
 /* #####################################################################################################
-##### Enclosing Page ###################################################################################
+##### Design tokens ####################################################################################
 ######################################################################################################## */
 
-/* Modern CSS Variables ------------------------------------- */
 :root {
-	--toh-primary: #0099d9;
-	--toh-primary-dark: #0077b3;
-	--toh-primary-light: #33b5e5;
-	--toh-accent: #00c853;
-	--toh-ok: #15803d;
-	--toh-danger: #b91c1c;
-	--toh-warn: #d97706;
-	--toh-bg: #f8fafc;
-	--toh-surface: #ffffff;
-	--toh-text: #1e293b;
-	--toh-text-secondary: #64748b;
-	--toh-border: #e2e8f0;
-	/* for separators that have to read as clearly as the table's own row borders */
-	--toh-border-strong: #b7c0cb;
-	--toh-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-	--toh-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-	--toh-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-	--toh-radius: 8px;
-	--toh-radius-lg: 12px;
-	--toh-transition: 0.2s ease;
+	/* neutrals ------------------------------------------------ */
+	--bg:				#fafafa;
+	--surface:			#ffffff;
+	--surface-sunken:	#f9fafb;
+	--sidebar-bg:		#f6f7f9;		/* a shade below the content, so the chrome reads as chrome */
+	--hover:			#f5f5f5;
+	--border:			#e5e7eb;
+	--border-soft:		#f0f1f3;		/* the in-table dividers: present, not loud */
+	--border-strong:	#d1d5db;
+
+	--text:				#111827;
+	--text-muted:		#6b7280;
+	--text-faint:		#6b7280;
+
+	/* accents -------------------------------------------------- */
+	--primary:			#2563eb;
+	--primary-hover:	#1d4ed8;
+	--primary-soft:		#eff6ff;
+	--primary-ring:		rgba(37, 99, 235, 0.18);
+
+	/* the three filter kinds, echoed on both the buttons and the columns */
+	--filt-sidebar:		#059669;
+	--filt-sidebar-bg:	#ecfdf5;
+	--filt-header:		#4f46e5;
+	--filt-header-bg:	#eef2ff;
+	--filt-all:			#0891b2;
+	--filt-all-bg:		#ecfeff;
+
+	/* status badges -------------------------------------------- */
+	--ok:				#15803d;
+	--ok-bg:			#dcfce7;
+	--pending:			#b45309;
+	--pending-bg:		#fef3c7;
+	--dead:				#b91c1c;
+	--dead-bg:			#fee2e2;
+
+	--danger:			#dc2626;
+	--warn:				#d97706;
+
+	/* shape ---------------------------------------------------- */
+	--r-sm:				6px;
+	--r:				10px;
+	--r-lg:				12px;
+	--shadow-xs:		0 1px 2px rgba(17, 24, 39, 0.05);
+	--shadow-lg:		0 12px 32px rgba(17, 24, 39, 0.12), 0 2px 8px rgba(17, 24, 39, 0.06);
+	--shadow-frozen:	6px 0 8px -6px rgba(17, 24, 39, 0.12);
+
+	--font:				-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+	/* --appbar-h is what everything below sticks under, so it has to grow when
+	   the summary row appears - see BODY.toh-summary-on. Keep the two parts
+	   separate rather than hard-coding the sum in two places. */
+	--appbar-row:		60px;
+	--summary-h:		44px;
+	--appbar-h:			var(--appbar-row);
+	--sidebar-w:		272px;
+	--gutter:			24px;
+	/* the table would otherwise sprawl edge to edge on a wide monitor and the
+	   rows get too long to track with your eye */
+	--shell-max:		1560px;
+
+	--t:				0.15s ease;
+
+	color-scheme: light;
 }
 
-/* ---------------------------------------------------------- */
-html, body {
+/* Dark theme ----------------------------------------------------------------
+	Everything downstream is expressed in the tokens above, so the dark theme is
+	just a token swap. data-theme is stamped on <html> by the inline script in
+	index.html before first paint - resolved from localStorage, falling back to
+	the OS preference - so there is no light flash and no rule duplication here.
+*/
+:root[data-theme="dark"] {
+	--bg:				#0d1117;
+	--surface:			#151b23;
+	--surface-sunken:	#1c2230;
+	--sidebar-bg:		#0b1017;		/* darker than the cards, so preset rows read as raised */
+	--hover:			#1f2530;
+	--border:			#2a323d;
+	--border-soft:		#222a35;
+	--border-strong:	#3a4453;
+
+	--text:				#e6edf3;
+	--text-muted:		#9aa5b1;
+	--text-faint:		#828e9d;
+
+	--primary:			#589bff;
+	--primary-hover:	#7cb2ff;
+	--primary-soft:		#16233a;
+	--primary-ring:		rgba(88, 155, 255, 0.25);
+
+	--filt-sidebar:		#3ddc97;
+	--filt-sidebar-bg:	#10291f;
+	--filt-header:		#9aa8ff;
+	--filt-header-bg:	#1b1f3a;
+	--filt-all:			#4dd0e1;
+	--filt-all-bg:		#102a30;
+
+	--ok:				#5dd68a;
+	--ok-bg:			#10291c;
+	--pending:			#e3b341;
+	--pending-bg:		#2b2210;
+	--dead:				#ff8080;
+	--dead-bg:			#2d1618;
+
+	--danger:			#ff7b72;
+	--warn:				#e3b341;
+
+	--shadow-xs:		0 1px 2px rgba(0, 0, 0, 0.4);
+	--shadow-lg:		0 12px 32px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.4);
+	--shadow-frozen:	6px 0 8px -6px rgba(0, 0, 0, 0.5);
+
+	color-scheme: dark;
+}
+
+
+/* #####################################################################################################
+##### Base #############################################################################################
+######################################################################################################## */
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+/* BODY is the scroll container, not HTML - the details popup is positioned
+   against it. That only works while BODY is exactly viewport height: give it
+   min-height instead and it grows to the full document, HTML clips it, and the
+   page cannot be scrolled at all. */
+html {
 	height: 100%;
-	margin: 0;
-	padding: 0;
-	overflow-x: hidden;
+	overflow-y: hidden;
+	-webkit-text-size-adjust: 100%;
 }
 
-/* this is needed to correctly handles the details-popup placement and scrolling */
-html{
-	overflow-y: hidden;
-}
-body{
-	font-size: 14px;
+body {
+	margin: 0;
+	height: 100%;
+	overflow-x: hidden;
 	overflow-y: scroll;
 	position: relative;
-	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-	color: var(--toh-text);
+	background: var(--bg);
+	color: var(--text);
+	font-family: var(--font);
+	font-size: 14px;
+	line-height: 1.5;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 }
 
-/* Layout --------------------------------------------------- */
-
-#toh-page{
-	background-color: var(--toh-bg);
-}
-BODY.toh-loading #toh-page{
-	animation: loading 0.5s infinite ease-in-out;
-}
-@keyframes loading {
-	0%, 100% { 	background-color: rgb(242, 245, 199); 		}
-	50% { 		background-color:rgb(240, 222, 222) 		} 
-}
-
-/* Header --------------------------------------------------  */
-
-#toh-header{
-	background: linear-gradient(135deg, var(--toh-primary) 0%, var(--toh-primary-dark) 100%);
-	border-bottom: none;
-	margin-bottom: 24px;
-	box-shadow: var(--toh-shadow-lg);
-}
-#toh-header-bg{
-	padding: 4px 0;
-	position: relative;
-}
-
-#toh-header,
-#toh-header h1,
-#toh-header-right {
-	min-height: 56px;
-}
-
-#toh-header-logo{
-	float: left;
-}
-#toh-header-logo{
-	padding: 11px 16px 0 24px;
-}
-#toh-header-logo IMG{
-	height:32px;
-	transition: transform var(--toh-transition), filter var(--toh-transition);
-}
-#toh-header-title{
-	float: left;
-	padding-right: 24px;
-}
-#toh-header h1 {
-	line-height: 56px;
+h1, h2, h3, h4, h5 {
 	margin: 0;
-	text-align: left;
-	font-size: 1.75rem;
 	font-weight: 600;
-	letter-spacing: -0.025em;
+	letter-spacing: -0.011em;
+	color: var(--text);
 }
-#toh-header h1,
-#toh-header h1 A{
-	color: #fff;
+
+p {
+	margin: 0;
+}
+
+a {
+	color: var(--primary);
 	text-decoration: none;
-	transition: opacity var(--toh-transition);
 }
-#toh-header h1 A:hover{
-	opacity: 0.9;
-}
-#toh-search-icon I:hover,
-#toh-header A:hover{
-	text-shadow: none;
-	opacity: 0.9;
-}
-#toh-header-logo IMG:hover{
-	filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
-	transform: scale(1.05);
+a:hover {
+	color: var(--primary-hover);
 }
 
-#toh-dev-badge{
-	position: absolute;
-	bottom: 0;
-	left: 50%;
-	transform: translateX(50%) translateY(50%);
-	background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-	box-shadow: var(--toh-shadow);
-	border-radius: 6px;
-	padding: 4px 10px;
+ul {
+	margin: 0;
+	padding-left: 1.25em;
+}
+
+hr {
+	border: 0;
+	border-top: 1px solid var(--border);
+	margin: 16px 0;
+}
+
+input,
+select,
+button,
+textarea {
+	font: inherit;
+	color: inherit;
+}
+
+:focus-visible {
+	outline: 2px solid var(--primary);
+	outline-offset: 2px;
+	border-radius: 3px;
+}
+
+.toh-hidden {
+	display: none;
+}
+
+.badge {
+	display: inline-block;
+	padding: 2px 7px;
+	border-radius: 999px;
+	background: var(--danger);
+	color: #fff;
 	font-size: 11px;
-	font-weight: 500;
+	font-weight: 600;
+	line-height: 1.5;
 }
-#toh-dev-badge:hover{
+
+
+/* Icons ---------------------------------------------------------------------
+	Lucide, from the sprite inlined at the top of index.html. Sized in em so an
+	icon always tracks the text it sits next to.
+*/
+.toh-icon-sprite {
+	display: none;
+}
+
+.toh-ico {
+	width: 1.05em;
+	height: 1.05em;
+	flex: none;
+	vertical-align: -0.16em;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	overflow: visible;
+}
+
+.toh-ico-2x {
+	width: 2em;
+	height: 2em;
+}
+
+.toh-ico-spin {
+	animation: toh-spin 0.9s linear infinite;
+}
+@keyframes toh-spin {
+	to { transform: rotate(360deg); }
+}
+
+.toh-ico-heart {
+	color: #f43f5e;
+	fill: #f43f5e;
+	stroke: none;
+}
+
+
+/* #####################################################################################################
+##### App bar ##########################################################################################
+######################################################################################################## */
+
+#toh-appbar {
+	position: sticky;
+	top: 0;
+	z-index: 900;
+	height: var(--appbar-h);
+	background: var(--surface);
+	border-bottom: 1px solid var(--border);
+}
+
+.toh-appbar-inner {
+	height: var(--appbar-row);
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 0 var(--gutter);
+}
+
+#toh-sidebar-toggle {
+	display: none;					/* only useful once the sidebar collapses */
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	margin-left: -6px;
+	padding: 0;
+	border: 1px solid transparent;
+	border-radius: var(--r-sm);
+	background: none;
+	color: var(--text-muted);
 	cursor: pointer;
-	transform: translateX(50%) translateY(50%) scale(1.05);
+	transition: background var(--t), color var(--t);
+}
+#toh-sidebar-toggle:hover {
+	background: var(--hover);
+	color: var(--text);
+}
+#toh-sidebar-toggle .toh-ico {
+	width: 18px;
+	height: 18px;
+}
+#toh-sidebar-toggle .toh-ico-sb-close,
+BODY.toh-sidebar-open #toh-sidebar-toggle .toh-ico-sb-open {
+	display: none;
+}
+BODY.toh-sidebar-open #toh-sidebar-toggle .toh-ico-sb-close {
+	display: block;
 }
 
-#toh-header-count{
-	color: rgba(255, 255, 255, 0.95);
-	font-size: 1.1rem;
+#toh-appbar-brand {
+	display: flex;
+	align-items: center;
+}
+/* logo.svg is a two-tone mark drawn for the old blue header - its wordmark is
+   white, so it disappears on a light bar. Flatten it to one colour per theme. */
+#toh-appbar-brand img {
+	height: 26px;
+	width: auto;
+	display: block;
+	filter: brightness(0);
+	opacity: 0.85;
+	transition: opacity var(--t);
+}
+#toh-appbar-brand:hover img {
+	opacity: 1;
+}
+:root[data-theme="dark"] #toh-appbar-brand img {
+	filter: brightness(0) invert(1);
+}
+
+#toh-appbar-title {
+	color: var(--text);
+	font-size: 15px;
+	font-weight: 600;
+	letter-spacing: -0.01em;
+	white-space: nowrap;
+	padding-left: 12px;
+	border-left: 1px solid var(--border);
+}
+#toh-appbar-title:hover {
+	color: var(--primary);
+}
+
+#toh-dev-badge {
+	display: none;					/* shown by BODY.branch-dev */
+	flex: none;
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: var(--dead-bg);
+	border: 1px solid var(--dead);
+	color: var(--dead);
+	font-size: 11px;
+	font-weight: 600;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.toh-appbar-right {
+	margin-left: auto;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+#toh-theme-toggle {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	padding: 0;
+	border: 1px solid transparent;
+	border-radius: var(--r-sm);
+	background: none;
+	color: var(--text-muted);
+	cursor: pointer;
+	transition: background var(--t), color var(--t);
+}
+#toh-theme-toggle:hover {
+	background: var(--hover);
+	color: var(--text);
+}
+#toh-theme-toggle .toh-ico {
+	width: 16px;
+	height: 16px;
+}
+/* show the icon for the theme you would switch *to* */
+#toh-theme-toggle .toh-ico-theme-light,
+:root[data-theme="dark"] #toh-theme-toggle .toh-ico-theme-dark {
+	display: none;
+}
+:root[data-theme="dark"] #toh-theme-toggle .toh-ico-theme-light {
+	display: block;
+}
+
+#toh-header-loading {
+	display: none;
+	color: var(--primary);
+	line-height: 1;
+}
+
+.toh-appbar-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	color: var(--text-muted);
+	font-size: 13px;
+	font-weight: 500;
+	transition: color var(--t);
+}
+.toh-appbar-link:hover {
+	color: var(--text);
+}
+.toh-appbar-link .toh-ico {
+	width: 13px;
+	height: 13px;
+	opacity: 0.7;
+}
+
+
+/* Summary row -----------------------------------------------------------------
+   Once the hero has scrolled away the visitor loses every trace of what they
+   asked for: the search terms, the filters, and how many devices are left. This
+   row carries all three, and it is a second row of the app bar rather than its
+   own sticky element so the sidebar and the advanced-search head - which both
+   stick under var(--appbar-h) - follow it without measuring anything. */
+#toh-summary {
+	height: 0;
+	overflow: hidden;
+	/* zero width, not a transparent 1px: a hidden border still occupies a row and
+	   pushes everything below it down by a pixel */
+	border-top: 0 solid var(--border);
+	background: var(--surface-sunken);
+	opacity: 0;
+	transition: height var(--t), opacity var(--t);
+}
+BODY.toh-summary-on {
+	--appbar-h: calc(var(--appbar-row) + var(--summary-h));
+}
+BODY.toh-summary-on #toh-summary {
+	height: var(--summary-h);
+	border-top-width: 1px;
+	opacity: 1;
+}
+
+.toh-summary-inner {
+	height: var(--summary-h);
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 0 var(--gutter);
+}
+
+/* back to the top, where the search is */
+#toh-summary-back {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	border: 1px solid var(--border);
+	border-radius: var(--r-sm);
+	background: var(--surface);
+	color: var(--text-muted);
+	cursor: pointer;
+	transition: background var(--t), color var(--t);
+}
+#toh-summary-back:hover {
+	background: var(--hover);
+	color: var(--text);
+}
+#toh-summary-back .toh-ico {
+	width: 15px;
+	height: 15px;
+}
+
+/* the terms themselves, each one droppable on its own */
+#toh-summary-chips {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+#toh-summary-chips::-webkit-scrollbar {
+	display: none;
+}
+
+.toh-summary-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	flex: 0 0 auto;
+	max-width: 260px;
+	height: 26px;
+	padding: 0 4px 0 9px;
+	border: 1px solid var(--border);
+	border-radius: 999px;
+	background: var(--surface);
+	color: var(--text);
+	font-size: 12px;
+	white-space: nowrap;
+}
+.toh-summary-chip-key {
+	color: var(--text-faint);
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+.toh-summary-chip-val {
+	overflow: hidden;
+	text-overflow: ellipsis;
 	font-weight: 500;
 }
-#toh-header-count .toh-count-rows-full B{
-	font-weight: 700;
-	color: #fde047;
+.toh-summary-chip-drop {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 18px;
+	height: 18px;
+	border-radius: 999px;
+	color: var(--text-faint);
+	transition: background var(--t), color var(--t);
 }
-#toh-header-count .toh-count-rows-full I{
-	font-style: normal;
+.toh-summary-chip-drop:hover {
+	background: var(--hover);
+	color: var(--text);
+}
+.toh-summary-chip-drop .toh-ico {
+	width: 11px;
+	height: 11px;
 }
 
-#toh-header-right{
-	padding-right: 50px;
+/* a chip that opens the filter rail instead of dropping anything */
+A.toh-summary-chip-filters {
+	padding-right: 9px;
+	cursor: pointer;
+}
+A.toh-summary-chip-filters:hover {
+	background: var(--hover);
+}
+
+#toh-summary-count {
+	flex: 0 0 auto;
+	margin-left: auto;
+	color: var(--text-muted);
+	font-size: 13px;
+	white-space: nowrap;
+}
+#toh-summary-count B {
+	color: var(--text);
+	font-weight: 600;
+}
+
+#toh-summary-actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex: 0 0 auto;
+}
+
+
+/* #####################################################################################################
+##### Cards : the phone renderer #######################################################################
+######################################################################################################## */
+
+/* Below --phone-max a table of any width is the wrong shape, so the same rows
+   are drawn as cards instead. Tabulator keeps filtering, sorting and paginating
+   in a hidden container - see tohRenderCards(). */
+#toh-cards {
+	display: none;
+}
+
+@media screen and (max-width: 700px) {
+	#toh-table-container {
+		display: none;
+	}
+	#toh-cards {
+		display: block;
+		padding: 10px;
+	}
+}
+
+#toh-cards-list {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.toh-card-dev {
+	position: relative;
+	padding: 12px 14px;
+	border: 1px solid var(--border);
+	border-radius: var(--r);
+	background: var(--surface);
+}
+.toh-card-dev.is-fav {
+	border-color: var(--border-strong);
+}
+
+/* name and support state on one line, because together they are the answer to
+   "does my router run OpenWrt" */
+.toh-card-head {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+}
+.toh-card-names {
+	min-width: 0;
+	flex: 1 1 auto;
+}
+.toh-card-brand {
+	display: block;
+	color: var(--text-muted);
+	font-size: 12px;
+}
+.toh-card-model {
+	display: block;
+	color: var(--text);
+	font-size: 15px;
+	font-weight: 600;
+	line-height: 1.3;
+	overflow-wrap: anywhere;
+}
+.toh-card-state {
+	flex: 0 0 auto;
+	padding-top: 2px;
+}
+
+/* the four numbers worth having before you open anything */
+.toh-card-specs {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+	gap: 8px 10px;
+	margin-top: 10px;
+	padding-top: 10px;
+	border-top: 1px solid var(--border-soft);
+}
+.toh-card-spec {
+	min-width: 0;
+}
+.toh-card-spec-key {
+	display: block;
+	color: var(--text-faint);
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+.toh-card-spec-val {
+	display: block;
+	color: var(--text);
+	font-size: 13px;
+	font-weight: 500;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.toh-card-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 12px;
+}
+.toh-card-actions .toh-but {
+	height: 34px;			/* a finger, not a pointer */
+}
+.toh-card-details {
+	flex: 1 1 auto;
+	justify-content: center;
+}
+.toh-card-fav,
+.toh-card-cmp {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	padding: 0;
+	border: 1px solid var(--border);
+	border-radius: var(--r-sm);
+	background: var(--surface);
+	color: var(--text-faint);
+	cursor: pointer;
+	transition: background var(--t), color var(--t), border-color var(--t);
+}
+.toh-card-fav.is-on {
+	border-color: var(--danger);
+	color: var(--danger);
+}
+.toh-card-cmp.is-on {
+	border-color: var(--primary);
+	background: var(--primary-soft);
+	color: var(--primary);
+}
+.toh-card-fav .toh-ico,
+.toh-card-cmp .toh-ico {
+	width: 16px;
+	height: 16px;
+}
+
+.toh-cards-empty {
+	padding: 32px 12px;
+	color: var(--text-muted);
+	text-align: center;
+}
+
+#toh-cards-pager {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+	gap: 10px;
+	margin-top: 12px;
 }
-#toh-header-search{
-	padding-left: 20px;
+#toh-cards-page {
+	color: var(--text-muted);
+	font-size: 13px;
+	white-space: nowrap;
 }
-#toh-search-icon{
-	display: inline-block;
-	font-size: 18px;
-	color: rgba(255, 255, 255, 0.9);
-	padding-right: 10px;
-	transition: transform var(--toh-transition);
-}
-#toh-search-icon I{
-	opacity: 0.85;
-	transition: opacity var(--toh-transition);
+#toh-cards-pager BUTTON:disabled {
+	opacity: 0.4;
+	cursor: default;
 }
 
-#toh-search-icon I:hover{
-	cursor: pointer;
-	opacity: 1;
-	transform: scale(1.1);
-}
 
-#toh-header-search .toh-hidden{
+/* Details sheet : the popup's content, full screen ------------------------- */
+#toh-sheet {
+	position: fixed;
+	inset: 0;
+	z-index: 1200;
+}
+#toh-sheet.toh-hidden {
 	display: none;
 }
-#toh-header-search .toh-search-group {
+#toh-sheet-scrim {
+	position: absolute;
+	inset: 0;
+	background: rgba(17, 24, 39, 0.45);
+}
+#toh-sheet-panel {
+	position: absolute;
+	inset: 24px 0 0 0;
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+	border-radius: var(--r) var(--r) 0 0;
+	background: var(--surface);
+	box-shadow: var(--shadow-lg);
+}
+#toh-sheet-close {
+	position: sticky;
+	top: 0;
+	float: right;
+	z-index: 2;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	margin: 4px 4px 0 0;
+	border: 0;
+	border-radius: 999px;
+	background: var(--surface);
+	color: var(--text-muted);
+	cursor: pointer;
+}
+#toh-sheet-close .toh-ico {
+	width: 22px;
+	height: 22px;
+}
+/* the shared markup carries the popup's own frame, which the sheet supplies */
+#toh-sheet-body .toh-details-container,
+#toh-sheet-body .toh-details-border {
+	position: static;
+	width: auto;
+	max-width: none;
+	border: 0;
+	box-shadow: none;
+	opacity: 1;
+}
+#toh-sheet-body .toh-details-close,
+#toh-sheet-body .toh-details-bottom {
+	display: none;
+}
+#toh-sheet-body .toh-details-content {
+	column-count: 1;
+}
+
+
+/* #####################################################################################################
+##### Shell : sidebar + content ########################################################################
+######################################################################################################## */
+
+/* Two columns, two rows. The hero takes the content column on the first row,
+   which is what puts the sidebar's top edge level with the table instead of
+   letting the filters run the whole height of the page. */
+#toh-shell {
+	display: grid;
+	grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+	grid-template-rows: auto auto;
+	align-items: start;
+	max-width: var(--shell-max);
+	margin: 0 auto;
+}
+
+#toh-hero {
+	grid-column: 2;
+	grid-row: 1;
+}
+/* the rail runs the height of the grid, its top edge level with the hero */
+#toh-sidebar {
+	grid-column: 1;
+	grid-row: 1 / span 2;
+}
+#toh-content {
+	grid-column: 2;
+	grid-row: 2;
+}
+
+/* The sidebar starts level with the table, not with the hero, and never grows
+   past the viewport - its own list scrolls instead. */
+#toh-sidebar {
+	position: sticky;
+	top: var(--appbar-h);
+	max-height: calc(100vh - var(--appbar-h));
+	border-right: 1px solid var(--border);
+	background: var(--sidebar-bg);
+	overflow: hidden;
+}
+
+#toh-sidebar-inner {
+	max-height: calc(100vh - var(--appbar-h));
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	padding: 32px 20px 40px;		/* top aligns the title with the hero H1 */
+}
+
+#toh-sidebar-scrim {
+	display: none;
+}
+
+#toh-content {
+	min-width: 0;
+	padding: 28px var(--gutter) 48px;
+}
+
+
+/* Sidebar : section chrome ------------------------------------------------- */
+
+.toh-side-title {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 4px;
+}
+
+A.toh-side-title-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	color: var(--text);
+	font-size: 13px;
+	font-weight: 600;
+}
+A.toh-side-title-toggle:hover {
+	color: var(--primary);
+}
+.toh-side-caret {
+	width: 13px;
+	height: 13px;
+	color: var(--text-faint);
+	transition: transform var(--t);
+}
+A.toh-side-title-toggle.is-open .toh-side-caret {
+	transform: rotate(90deg);
+}
+
+/* hidden until sidebar filters are actually in use (toggleFilterClearButVisibility) */
+A.toh-filters-clear {
+	display: none;
+	align-items: center;
+	gap: 3px;
+	margin-left: auto;
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: var(--filt-sidebar-bg);
+	color: var(--filt-sidebar);
+	font-size: 11px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: filter var(--t);
+}
+A.toh-filters-clear.toh-but-shown {
+	display: inline-flex;
+}
+A.toh-filters-clear:hover {
+	color: var(--filt-sidebar);
+	filter: brightness(0.96);
+}
+A.toh-filters-clear .toh-ico {
+	width: 11px;
+	height: 11px;
+}
+
+.toh-side-container {
+	padding-top: 18px;
+}
+
+/* Whitespace does the separating, not rules. The only hairline is above the
+   trailing options block, which is a different kind of control. */
+.toh-side-section + .toh-side-section {
+	margin-top: 30px;
+}
+#toh-filters-options {
+	margin-top: 32px;
+	padding-top: 20px;
+	border-top: 1px solid var(--border);
+}
+
+.toh-side-subtitle {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 10px;
+	color: var(--text-faint);
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+
+
+/* Sidebar : filter presets ------------------------------------------------- */
+
+#toh-filters-presets .toh-filters-list {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+#toh-filters-presets .toh-filter-preset .toh-filter-title {
+	display: block;
+}
+
+/* full-width rows, like the filters below them */
+#toh-filters-presets A.toh-filter-button {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	padding: 7px 10px;
+	border: 1px solid var(--border-strong);
+	border-radius: var(--r-sm);
+	background: var(--surface);
+	color: var(--text);
+	font-size: 13px;
+	/* named, not "all": "all" makes the browser check every animatable
+	   property on each style change, layout ones included */
+	transition: background-color var(--t), border-color var(--t), color var(--t), opacity var(--t), box-shadow var(--t);
+}
+#toh-filters-presets A.toh-filter-button:hover {
+	border-color: var(--primary);
+	background: var(--primary-soft);
+	color: var(--primary);
+}
+/* the preset currently in force. Click it again to clear it. */
+#toh-filters-presets A.toh-filter-button.toh-selected {
+	border-color: var(--primary);
+	background: var(--primary-soft);
+	color: var(--primary);
+	box-shadow: inset 3px 0 0 var(--primary);
+}
+#toh-filters-presets A.toh-filter-button.toh-selected .toh-filter-label {
+	font-weight: 650;
+}
+#toh-filters-presets A.toh-filter-button.toh-selected .toh-filter-sub {
+	color: var(--primary);
+	opacity: 0.85;
+}
+#toh-filters-presets .toh-filter-lines {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+#toh-filters-presets .toh-filter-label {
+	white-space: normal;
+	font-weight: 500;
+}
+#toh-filters-presets .toh-filter-sub {
+	color: var(--text-muted);
+	font-size: 11.5px;
+	line-height: 1.35;
+}
+#toh-filters-presets A.toh-filter-button:hover .toh-filter-sub {
+	color: var(--primary);
+	opacity: 0.85;
+}
+/* the preset explanation only fits as a tooltip in a 272px column */
+#toh-filters-presets .toh-filter-description {
+	display: none;
+}
+
+
+/* Sidebar : feature filters ------------------------------------------------ */
+
+.toh-filters-list-multi {
+	display: flex;
+	flex-direction: column;
+	gap: 26px;
+}
+
+.toh-filtgroup-title {
+	margin-bottom: 8px;
+}
+.toh-filtgroup-title A,
+.toh-viewgroup-title A {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--text-faint);
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+.toh-filtgroup-title .toh-ico {
+	width: 12px;
+	height: 12px;
+	opacity: 0.7;
+}
+.toh-filtgroup-title A:hover {
+	cursor: default;
+	color: var(--text-faint);
+}
+.toh-filtgroup-count:not(:empty) {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 16px;
+	height: 16px;
+	margin-left: 2px;
+	padding: 0 5px;
+	border-radius: 999px;
+	background: var(--primary);
+	color: #fff;
+	font-size: 10px;
+	letter-spacing: 0;
+}
+
+/* groups past the first few, revealed by "Show more filters" */
+.toh-filtgroup-extra {
+	display: none;
+}
+.toh-filters-list-multi.show-all .toh-filtgroup-extra {
+	display: block;
+}
+
+A.toh-filters-more {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-top: 2px;
+	color: var(--primary);
+	font-size: 13px;
+	font-weight: 500;
+}
+A.toh-filters-more .toh-ico {
+	width: 14px;
+	height: 14px;
+	transition: transform var(--t);
+}
+.toh-filters-list-multi.show-all A.toh-filters-more .toh-ico {
+	transform: rotate(180deg);
+}
+.toh-filters-list-multi .toh-filters-more-hide,
+.toh-filters-list-multi.show-all .toh-filters-more-show {
+	display: none;
+}
+.toh-filters-list-multi.show-all .toh-filters-more-hide {
+	display: inline;
+}
+
+.toh-filters-list UL,
+.toh-cols-list UL {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+/* Each filter is a full-width row - label left, matching device count right -
+   rather than a browser checkbox with a label after it. The native checkbox is
+   still the state, just not the thing you look at. */
+.toh-filter {
+	padding: 0;
+}
+
+.toh-filter-feature .toh-filter-title {
+	display: block;
+	min-width: 0;
+}
+.toh-filter-feature INPUT[type=checkbox] {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.toh-filter-feature .toh-filter-title A {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	padding: 6px 9px;
+	border-radius: var(--r-sm);
+	color: var(--text);
+	font-size: 13px;
+	transition: background var(--t), color var(--t);
+}
+.toh-filter-feature .toh-filter-title A:hover {
+	background: var(--hover);
+	color: var(--text);
+}
+.toh-filter-label {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.toh-filter-count {
+	flex: none;
+	color: var(--text-faint);
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+}
+
+/* on ----
+   The marker is an inset shadow rather than a pseudo-element: adding a box to
+   the flex row on activation pushed the whole label sideways on every click. */
+.toh-filter-feature.is-on .toh-filter-title A {
+	background: var(--primary-soft);
+	box-shadow: inset 3px 0 0 var(--primary);
+	color: var(--primary);
+	font-weight: 600;
+}
+.toh-filter-feature.is-on .toh-filter-count {
+	color: var(--primary);
+}
+
+/* the long "field like value" explanation only fits as a tooltip here */
+.toh-filter-feature .toh-filter-description {
+	display: none;
+}
+
+.toh-filtgroup[data-group=admin] A {
+	color: var(--danger);
+}
+
+
+/* Sidebar : "links columns view" options ----------------------------------- */
+
+#toh-filters-options {
+	font-size: 12px;
+	color: var(--text-muted);
+}
+.toh-options-title A {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	color: var(--text-faint);
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+.toh-options-title A:hover {
+	cursor: help;
+	color: var(--text-muted);
+}
+.toh-options-title .toh-ico {
+	width: 12px;
+	height: 12px;
+}
+.toh-options-radios {
+	margin-top: 8px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+.toh-options-radios LABEL {
+	cursor: pointer;
+}
+.toh-options-radios INPUT[type=radio] {
+	margin-right: 6px;
+	accent-color: var(--primary);
+	cursor: pointer;
+}
+
+
+/* User presets (the small 1/2/3 tabs) -------------------------------------- */
+
+.toh-upresets {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	margin-left: auto;
+	text-transform: none;
+	letter-spacing: 0;
+}
+.toh-upresets-title A {
+	display: inline-flex;
+	color: var(--text-faint);
+}
+.toh-upresets-title A:hover {
+	cursor: help;
+	color: var(--text-muted);
+}
+.toh-upresets-title .toh-ico {
+	width: 13px;
+	height: 13px;
+}
+
+/* the 1/2/3 slots are meaningless unlabelled */
+.toh-upresets-label {
+	color: var(--text-faint);
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+}
+
+.toh-upresets-content {
+	display: inline-flex;
+	gap: 3px;
+}
+.toh-upresets-content A {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 18px;
+	height: 18px;
+	padding: 0 4px;
+	border: 1px solid var(--border);
+	border-radius: var(--r-sm);
+	background: var(--surface);
+	color: var(--text-faint);
+	font-size: 10px;
+	font-weight: 600;
+}
+.toh-upresets-content A:hover {
+	border-color: var(--border-strong);
+	color: var(--text-muted);
+}
+.toh-upresets-content A.toh-used {
+	border-color: var(--primary);
+	background: var(--primary-soft);
+	color: var(--primary);
+}
+.toh-upresets-content A.toh-saving {
+	border-color: var(--warn);
+	background: #fffbeb;
+	color: var(--warn);
+}
+
+
+/* #####################################################################################################
+##### Page head ########################################################################################
+######################################################################################################## */
+
+/* Most people arrive with one question - "does my router run OpenWrt?" - so
+   the search sits at the top of the content column, directly above the table
+   it searches. */
+#toh-hero {
+	padding: 28px var(--gutter) 4px;
+}
+
+#toh-hero H1 {
+	font-size: 32px;
+	line-height: 1.15;
+	letter-spacing: -0.025em;
+}
+
+#toh-lede {
+	margin-top: 8px;
+	max-width: 60ch;
+	color: var(--text-muted);
+	font-size: 15px;
+}
+
+/* Hero search -------------------------------------------------------------- */
+
+.toh-herosearch {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	max-width: 680px;
+	margin-top: 24px;
+	padding: 0 16px;
+	height: 52px;
+	border: 1px solid var(--border-strong);
+	border-radius: var(--r-lg);
+	background: var(--surface);
+	transition: border-color var(--t), box-shadow var(--t);
+}
+.toh-herosearch:focus-within {
+	border-color: var(--primary);
+	box-shadow: 0 0 0 4px var(--primary-ring);
+}
+
+#toh-search-icon {
+	display: flex;
+	color: var(--text-faint);
+}
+#toh-search-icon .toh-ico {
+	width: 19px;
+	height: 19px;
+}
+
+.toh-search-group {
 	position: relative;
-	display: inline-block !important;
-	margin-bottom: 0;
-	margin-right: 4px;
+	display: flex;
+	align-items: center;
+	min-width: 0;
+	flex: 1 1 0;
 }
-#toh-header-search .toh-search-input {
-	width: 165px;
-	height: 34px;
-	font-size: 14px;
-	border-radius: 20px;
-	padding: 6px 30px 6px 12px;
-	border: 2px solid transparent;
-	background: rgba(255, 255, 255, 0.95);
-	box-shadow: var(--toh-shadow-sm);
-	transition: all var(--toh-transition);
+
+.toh-search-input {
+	width: 100%;
+	min-width: 0;
+	height: 32px;
+	padding: 0 24px 0 0;
+	border: 0;
+	background: none;
+	/* not below 16px: iOS Safari zooms the page when a smaller input takes
+	   focus, and leaves it zoomed. The hero box is 46-52px tall, so this fits. */
+	font-size: 16px;
 }
-#toh-header-search .toh-search-input:focus {
-	border-color: var(--toh-primary-light);
-	background: #fff;
-	box-shadow: 0 0 0 3px rgba(0, 153, 217, 0.2);
+.toh-search-input:focus {
 	outline: none;
 }
-/* .input-group .toh-search-clear {
-	margin: 0;
-} */
+.toh-search-input::placeholder {
+	color: var(--text-faint);
+}
 
 .toh-search-clear {
 	position: absolute;
-	right: 10px;
+	right: 2px;
 	top: 50%;
 	transform: translateY(-50%);
-	pointer-events: auto;
-	cursor: pointer;
-	color: var(--toh-text-secondary);
-	z-index: 9;
 	display: none;
-	opacity: 0.6;
-	transition: all var(--toh-transition);
+	/* a real <button> now, so it is focusable and has a name - these strip the
+	   default chrome that came with it */
+	border: 0;
+	background: none;
 	padding: 4px;
+	line-height: 0;
+	color: var(--text-faint);
+	cursor: pointer;
+	transition: color var(--t);
+}
+.toh-search-clear:hover,
+.toh-search-clear:focus-visible {
+	color: var(--danger);
 }
 .toh-search-clear:hover {
-	opacity: 1;
-	color: #ef4444;
-	transform: translateY(-50%) scale(1.1);
+	color: var(--danger);
 }
-
+.toh-search-clear .toh-ico {
+	width: 16px;
+	height: 16px;
+	display: block;
+}
 .toh-search-clear::-ms-clear {
 	display: none;
 }
 
+/* Stats : a card each, with an icon ------------------------------------------ */
 
-#toh-header-loading{
-	position: absolute;
-	top: 50%;
-	transform: translateY(-50%);
-	right: 12px;
-	font-size: 1.5rem;
-	color: #fde047;
-	animation: pulse 1.5s ease-in-out infinite;
-}
-@keyframes pulse {
-	0%, 100% { opacity: 1; }
-	50% { opacity: 0.5; }
+#toh-stats {
+	margin-top: 24px;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+	gap: 12px;
+	max-width: 920px;
 }
 
-@media screen and (max-width: 1065px) {
-	#toh-header-title{
-		float: none;
-	}
-	#toh-header-bg,
-	#toh-header-right,
-	#toh-header h1{
-		min-height: 40px;
-	}
-	#toh-header h1 {
-		line-height: 40px;
-	}
-	#toh-dev-badge{
-		font-size: 11px;
-		padding: 2px 5px;
-	}
-	#toh-header-logo{
-		padding-top: 5px;
-	}
-	#toh-header-right{
-		padding-left: 130px;
-		padding-right: 20px;
-	}
-
-	#toh-header-search .form-control{
-		height: 25px;
-	}
-	#toh-search-icon{
-		display: none;	/* when hidding icon */
-	}
-	#toh-search{
-		display: inline-block !important; /* when hidding icon */
-	}
-	#toh-header-loading{
-		left: 20px;
-		top: 70%;
-		right: auto;
-		/* right: auto;
-		*/
-		/* font-size: 18px; */
-	}
-
-}
-@media screen and (max-width: 660px) {
-	#toh-header-bg{
-		padding-bottom: 8px;
-	}
-	#toh-header-bg,
-	#toh-header-right,
-	#toh-header h1{
-		min-height: 30px;
-	}
-	#toh-header h1 {
-		line-height: 30px;
-	}
-	#toh-header-logo{
-		width: 29px;
-		overflow: hidden;
-	}
-	#toh-header-logo {
-		padding: 5px 20px 0 7px ;
-	}
-	#toh-header-logo IMG {
-		height: 25px;
-	}
-	#toh-header h1 {
-		padding-left: 40px;
-		font-size: 1.4em;
-	}
-	#toh-header-right{
-		padding-left: 0;
-		padding-right: 10px;
-	}
-
-	#toh-header-count{
-		font-size: 0.7em;
-	}
-	#toh-header-search{
-		padding-left: 7px;
-		margin-left: 33px; /* when hidding icon */
-	}
-	#toh-header-search .form-control{
-		width: 100px;
-		font-size: 12px;
-	}
-	#toh-search-icon{
-		font-size: 20px;
-		padding-top: 1px;
-		padding-right: 10px;
-	}
-	#toh-header-loading{
-		left: 10px;
-		top: 68%;
-		font-size: 16px;
-	}
-
+.toh-stat {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 14px 16px;
+	border: 1px solid var(--border);
+	border-radius: var(--r);
+	background: var(--surface);
 }
 
-
-/* Footer --------------------------------------------------  */
-#toh-footer-bg{
-	padding: 16px 0;
+.toh-stat-icon {
+	flex: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	border-radius: var(--r-sm);
+	background: var(--surface-sunken);
+	color: var(--text-muted);
 }
-#toh-footer{
-	border-top: none;
-	box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
-	font-size: 0.85rem;
-	text-align: center;
-	color: rgba(255, 255, 255, 0.85);
+.toh-stat-icon.is-ok {
+	background: var(--ok-bg);
+	color: var(--ok);
 }
-#toh-footer A{
-	color: #fff;
-	text-decoration: none;
-	font-weight: 500;
-	transition: opacity var(--toh-transition);
-}
-#toh-footer A:hover{
-	opacity: 0.8;
-	text-decoration: underline;
-}
-body,
-#toh-footer {
-	background: linear-gradient(135deg, var(--toh-primary) 0%, var(--toh-primary-dark) 100%);
+.toh-stat-icon .toh-ico {
+	width: 17px;
+	height: 17px;
 }
 
-
-/* Page content --------------------------------------------  */
-
-.toh-box{
-	border: 1px solid var(--toh-border);
-	border-radius: var(--toh-radius-lg);
-	background: var(--toh-surface);
-	box-shadow: var(--toh-shadow);
+.toh-stat-body {
+	min-width: 0;
+}
+.toh-stat-value {
+	display: block;
+	font-size: 24px;
+	font-weight: 650;
+	line-height: 1.15;
+	letter-spacing: -0.025em;
+	font-variant-numeric: tabular-nums;
 }
 
-#toh-main{
-	padding-top: 0;
-	margin-bottom: 24px;
+.toh-stat-label {
+	display: block;
+	color: var(--text-muted);
+	font-size: 12.5px;
+	line-height: 1.3;
 }
-
-#toh-info{
-	margin-bottom: 50px;
-}
-#toh-info .toh-box{
-	margin-bottom: 15px;
-	padding: 15px 20px;
-	font-size: 13px;
-	border-radius: 6px;
-}
-
-
-/* Tips ------------------------------------------------------*/
-
-#toh-tips{
-	margin-top: 10px;
-	border-left: 4px solid #00a3e1;
-}
-#toh-tips H4{
-	color: #0081b3;
-	margin-top: 0;
-	margin-bottom: 10px;
-	font-weight: 600;
-	font-size: 1rem;
-}
-#toh-tips H4 I{
-	margin-right: 6px;
-}
-#toh-tips LI{
-	color: #555;
-	line-height: 1.5;
-	margin-bottom: 4px;
-}
-#toh-tips UL,
-#toh-changelog-latest UL,
-#toh-changelog-previous{
-	column-count: 3;
-	column-gap: 2em; 
-	padding-left: 20px;
-}
-@media screen and (max-width: 1600px) {
-	#toh-tips UL,
-	#toh-changelog-latest UL {
-		column-count: 2;
-	}
-}
-@media screen and (max-width: 900px) {
-	#toh-tips UL,
-	#toh-changelog-latest UL {
-		column-count: 1;
-	}
-}
-
-
-/* ChangeLog -------------------------------------------------*/
-
-#toh-changelog{
-	margin-top: 20px;
-	background: linear-gradient(135deg, #fef9c3 0%, #fef3c7 100%);
-	border-color: #fde68a;
-}
-#toh-changelog HR{
-	border-color: #fde68a;
-}
-#toh-changelog H4 A{
-	font-size: 50%;
-	vertical-align: middle;
-	margin-left: 4px;
-	color: var(--toh-primary);
-	transition: color var(--toh-transition);
-}
-#toh-changelog H4 A:hover{
-	color: var(--toh-primary-dark);
-}
-
-#toh-changelog H5 {
-	margin-top: 0;
-	margin-bottom: 2px;
-	padding-left: 25px;
-	color: rgb(241, 121, 0);
-}
-#toh-changelog H5 .badge{
-	background-color: #E00;
-	margin-left: 8px;
-}
-#toh-changelog UL{
-	padding-left: 50px;
-}
-
-#toh-changelog-latest{
-	margin-bottom: 20px;
-}
-.toh-changelog-release{
-	break-inside: avoid-column;
-	margin-bottom: 15px;
-}
-#toh-changelog-desc{
-	float: right;
-	padding-top: 10px;
-	font-size: 11px;
-	color: #f00;
-}
-
-
-
 
 
 /* #####################################################################################################
-##### MAIN CONTENT #####################################################################################
+##### Cards ############################################################################################
 ######################################################################################################## */
 
+.toh-card {
+	border: 1px solid var(--border);
+	border-radius: var(--r-lg);
+	background: var(--surface);
+	box-shadow: var(--shadow-xs);
+}
 
-/* Global --------------------------------------------------- */
+#toh-main {
+	overflow: visible;				/* the toolbar menus overflow the card */
+}
 
-.toh-hidden{
+
+/* #####################################################################################################
+##### Toolbar ##########################################################################################
+######################################################################################################## */
+
+#toh-toolbar {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 10px;
+	padding: 12px 14px;
+	border-bottom: 1px solid var(--border);
+}
+
+/* Count -------------------------------------------------------------------- */
+
+#toh-toolbar-count {
+	color: var(--text-muted);
+	font-size: 13px;
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+}
+#toh-toolbar-count B,
+#toh-toolbar-count I {
+	color: var(--text);
+	font-style: normal;
+	font-weight: 650;
+}
+.toh-toolbar-count-label {
+	margin-left: 4px;
+}
+
+/* Actions ------------------------------------------------------------------ */
+
+#toh-toolbar-actions {
+	margin-left: auto;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+/* Density : one control of two halves, not two buttons ---------------------- */
+#toh-density {
+	display: inline-flex;
+	height: 32px;
+	padding: 2px;
+	border: 1px solid var(--border);
+	border-radius: var(--r-sm);
+	background: var(--surface-sunken);
+}
+.toh-density-but {
+	display: inline-flex;
+	align-items: center;
+	padding: 0 10px;
+	border: 0;
+	border-radius: calc(var(--r-sm) - 2px);
+	background: none;
+	color: var(--text-muted);
+	font-family: inherit;
+	font-size: 12px;
+	font-weight: 500;
+	white-space: nowrap;
+	cursor: pointer;
+	transition: background var(--t), color var(--t);
+}
+.toh-density-but:hover {
+	color: var(--text);
+}
+.toh-density-but[aria-pressed="true"] {
+	background: var(--surface);
+	color: var(--text);
+	box-shadow: var(--shadow-xs);
+	cursor: default;
+}
+
+
+/* #####################################################################################################
+##### Buttons ##########################################################################################
+######################################################################################################## */
+
+A.toh-but,
+BUTTON.toh-but {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 32px;
+	padding: 0 11px;
+	border: 1px solid var(--border);
+	border-radius: var(--r-sm);
+	background: var(--surface);
+	color: var(--text-muted);
+	font-size: 13px;
+	font-weight: 500;
+	white-space: nowrap;
+	cursor: pointer;
+	transition: background var(--t), border-color var(--t), color var(--t);
+}
+A.toh-but:hover,
+BUTTON.toh-but:hover {
+	background: var(--hover);
+	border-color: var(--border-strong);
+	color: var(--text);
+}
+A.toh-but .toh-ico {
+	width: 14px;
+	height: 14px;
+	opacity: 0.75;
+}
+
+/* The clear-* buttons stay hidden until the matching kind of filter is in use
+   (see toggleFilterClearButVisibility). They are the same shape as Columns and
+   Export - a toolbar is one control family - and carry the colour of the column
+   headers they clear as a dot rather than a fill. */
+#toh-toolbar-actions A.toh-but-clearheadersorts,
+#toh-toolbar-actions A.toh-but-clearfilters,
+#toh-toolbar-actions A.toh-but-clearheaderfilters,
+#toh-toolbar-actions A.toh-but-clearallfilters {
+	display: none;
+}
+#toh-toolbar-actions A.toh-but.toh-but-shown {
+	display: inline-flex;
+}
+#toh-toolbar-actions A.toh-but-clearfilters::before,
+#toh-toolbar-actions A.toh-but-clearheaderfilters::before,
+#toh-toolbar-actions A.toh-but-clearallfilters::before {
+	content: '';
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: currentColor;
+}
+#toh-toolbar-actions A.toh-but-clearfilters {
+	color: var(--filt-sidebar);
+}
+#toh-toolbar-actions A.toh-but-clearheaderfilters {
+	color: var(--filt-header);
+}
+#toh-toolbar-actions A.toh-but-clearallfilters {
+	color: var(--filt-all);
+}
+#toh-toolbar-actions A.toh-but-clearfilters:hover,
+#toh-toolbar-actions A.toh-but-clearheaderfilters:hover,
+#toh-toolbar-actions A.toh-but-clearallfilters:hover {
+	border-color: currentColor;
+	color: currentColor;
+}
+/* the dot replaces the x on the filter clears */
+#toh-toolbar-actions A.toh-but-clearfilters .toh-ico,
+#toh-toolbar-actions A.toh-but-clearheaderfilters .toh-ico,
+#toh-toolbar-actions A.toh-but-clearallfilters .toh-ico {
 	display: none;
 }
 
 
-/* Top sections ------------------------------------------------*/
+/* #####################################################################################################
+##### Toolbar menus (Columns / Export) #################################################################
+######################################################################################################## */
 
-#toh-top{
-}
-
-.toh-top-block{
-	/* height: 27px; */
-	margin-top: 25px;
-}
-.toh-top-block:first-child{
-	margin-top: 0;
-}
-
-.toh-top-title-left,
-.toh-top-title-presets A,
-#toh-top-cols .toh-upresets-title{
-	line-height: 20px;
-}
-#toh-top-filters .toh-top-title-left,
-#toh-top-filters .toh-top-title-presets A,
-#toh-top-filters .toh-upresets-title{
-	line-height: 22px;
-}
-
-.toh-top-title-left{
-	border-bottom: 1px solid  rgba(0, 0, 0, 0.02);
-}
-
-.toh-top-title,
-.toh-top-title-presets A{
-	border-bottom: 1px solid  rgba(0, 0, 0, 0.18);
-}
-.toh-top-title-left,
-.toh-top-title-presets A{
-	margin-bottom: -1px;
+.toh-menu {
 	position: relative;
-	z-index: 1;
-	vertical-align: bottom;
 }
-#toh-top-cols .toh-top-title-presets A{
-	margin-top: 1px;
+
+A.toh-menu-but.is-open {
+	background: var(--hover);
+	border-color: var(--border-strong);
+	color: var(--text);
 }
-#toh-top-cols .toh-top-title-presets A.toh-selected{
-	line-height: 21px;
-	margin-top: 0;
+.toh-menu-caret {
+	width: 13px;
+	height: 13px;
+	margin-left: -2px;
+	opacity: 0.55;
+	transition: transform var(--t);
+}
+A.toh-menu-but.is-open .toh-menu-caret {
+	transform: rotate(180deg);
+}
+
+.toh-menu-panel {
+	position: absolute;
+	top: calc(100% + 6px);
+	right: 0;
+	z-index: 800;
+	min-width: 220px;
+	max-width: min(920px, calc(100vw - 2 * var(--gutter)));
+	max-height: min(70vh, 640px);
+	overflow-y: auto;
+	padding: 14px;
+	border: 1px solid var(--border);
+	border-radius: var(--r);
+	background: var(--surface);
+	box-shadow: var(--shadow-lg);
+}
+
+#toh-cols-container {
+	width: 860px;
+}
+
+.toh-menu-panel-head {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding-bottom: 12px;
+	margin-bottom: 12px;
+	border-bottom: 1px solid var(--border);
 }
 
 
-.toh-top-title{
-	position: relative;
-	border-top: 1px solid rgba(0, 0, 0, 0.06);
-	background-color: #f5f5f5;
-	background: linear-gradient(to top,  rgba(0,0,0,0.08) 0%,rgba(0,0,0,0.01) 100%);	
-	font-size: 13px;
-	z-index: 0;
-}
-#toh-top-filters .toh-top-title{
-	border-top: 0;
-}
+/* Column view presets ------------------------------------------------------ */
 
-
-.toh-top-title-left{
+.toh-top-title-presets {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+#toh-cols-presets A {
 	display: inline-block;
-}
-.toh-top-title-left,
-.toh-top-title-left A.toh-top-title-toggle{
-	color: #444;
-}
-.toh-top-title-left A.toh-top-title-toggle{
-	display: inline-block;
-	padding-left: 5px;
-	margin-right: 10px;
-	text-decoration: none;
-}
-
-.toh-top-title-left A.toh-top-title-toggle:hover{
-	/* color: rgb(1, 123, 168); */
-	color: #222;
-}
-.toh-top-title-left A I{
-	/* margin-right: 5px; */
-}
-
-.toh-top-container{
-	padding: 8px 10px 5px 25px;
+	padding: 3px 10px;
+	border: 1px solid var(--border);
+	border-radius: 999px;
+	background: var(--surface);
+	color: var(--text-muted);
 	font-size: 12px;
+	font-weight: 500;
+	/* named, not "all": "all" makes the browser check every animatable
+	   property on each style change, layout ones included */
+	transition: background-color var(--t), border-color var(--t), color var(--t), opacity var(--t), box-shadow var(--t);
 }
-
-/* Top Menus ------------------------------------------------ */
-
-/* Views Presets ++++++++++++++  */
-
-.toh-top-title-presets A{
-	overflow: visible;
-	display: inline-block;
-	padding: 0 9px;
-	border-right: 1px solid rgba(0, 0, 0, 0.15);
-	background: linear-gradient(to bottom,  rgba(0,0,0,0.03) 0%,rgba(0,0,0,0.0) 100%), #fff;
-	/* background-color: #fff; */
-	color: #777;
-	text-decoration: none;
+#toh-cols-presets A:hover {
+	border-color: var(--border-strong);
+	background: var(--hover);
+	color: var(--text);
 }
-.toh-top-title-presets A:hover{
-	background: linear-gradient(to top, 
-		rgba(255,255,255, 0.95),
-		rgba(255,255,255, 0.85)
-	), rgb(0, 152, 207);
-	color: #000;
-}
-
-#toh-cols-title .toh-top-title-left{
-	border-right: 1px solid rgba(0, 0, 0, 0.12);
-}
-
-
-/* user presets ++++++++++++++  */
-
-.toh-upresets-content A.toh-saving{
-	background-color: #fae9cb;
-	opacity: 1.0;
-	color: #000;
-}
-.toh-upresets{
-	float:right;
-	margin-left: 15px;
-}
-.toh-upresets-title{
-	display: inline-block;
-	padding-right: 8px;
-	border-right: 1px solid rgba(0, 0, 0, 0.15);
-	font-size: 12px;
-}
-
-.toh-upresets-title A{
-	color: #aaa;
-}
-.toh-upresets-title A:hover{
-	color: #0B0;
-	cursor: help;
-}
-
-.toh-top-title-presets.toh-upresets-content A{
-	color: #ddd;
-}
-.toh-top-title-presets.toh-upresets-content A:hover{
-	color: #bbb;
-}
-.toh-upresets-content A:last-child{
-	border-right: none;
-}
-.toh-upresets-content A.toh-used{
-	/* background-color: #fff; */
-	color: #777;
-}
-.toh-upresets-content A.toh-used:hover{
-	color: #000;
-}
-
-
-/* selected presets  ++++++++++++++ -*/
-
-.toh-top-title-presets A.toh-selected{
-	border-right: 1px solid rgba(0, 0, 0, 0.12);
-	border-bottom: 1px solid rgba(0, 0, 0, 0.3);
-
-	background: linear-gradient(to bottom, 
-		rgba(255,255,255,0.6) 0%,
-		rgba(255,255,255,0.1) 100%),
-		rgb(0, 152, 207);
-	color: rgb(253, 253, 162);
-}
-.toh-top-title-presets A.toh-selected:hover{
+#toh-cols-presets A.toh-selected {
+	border-color: var(--primary);
+	background: var(--primary);
 	color: #fff;
 }
 
 
-
-/* User Preset Popup -----------------------------------------*/
-
-#toh-upreset-popup-save{
-	position: absolute;
-	background-color: #f9f9ff;
-	border: 1px solid rgb(199, 198, 198);
-	padding: 15px 10px;
-	border-radius: 5px;
-	font-size: 12px;
-	z-index: 1000;
-	box-shadow: 3px 3px 10px 2px rgba(0,0,0,.15);
-}
-#toh-upreset-popup-save INPUT{
-	background-color: rgb(230, 230, 252);
-}
-#toh-upreset-popup-save .toh-desc-mini{
-	font-size: 11px;
-	color: #aaa;
-	margin-top: 3px;
-	margin-bottom: 7px;
-}
-
-#toh-upreset-popup-save BUTTON{
-	padding: 4px 7px;
-	text-decoration: none;
-	border: 1px solid rgba(0,0,0,0.23) ;
-	border-radius: 6px;
-	font-size: 11px;
-	line-height: 13px;
-
-	background: linear-gradient(to top, 
-		rgba(0,0,0, 0.15),
-		rgba(0,0,0, 0.01)
-	), #fff;
-	color: #555;
-}
-#toh-upreset-popup-save BUTTON:hover{
-	background: linear-gradient(to top, 
-		rgba(0,0,0, 0.2),
-		rgba(0,0,0, 0.06)
-	), #fff;
-	color: #222;
-}
-
-
-
-/* Top Filters ---------------------------------------------- */
-
-#toh-filters-options{
-	float: right;
-	margin-top: 2px;
-	margin-left: 10px;
-	font-size: 11px;
-	border: 1px solid #ddd;
-	border-radius: 5px;
-	background: #eafafa;
-	padding: 0;
-	color: #777;
-}
-.toh-options-title{
-	background: #fff;
-	background: linear-gradient(to top,  rgba(0,0,0,0.08) 0%,rgba(0,0,0,0.01) 100%);	
-	padding: 3px 3px 2px 3px;
-	border-bottom: 1px solid #ccc;
-}
-.toh-options-title A{
-	color: #777;
-	text-decoration: none;
-}
-.toh-options-title A:hover{
-	color: #444;
-	cursor: help;
-}
-
-.toh-options-radios{
-	padding: 4px 2px 5px 10px;
-	line-height: 110%;
-}
-.toh-options-radios LABEL{
-	font-weight: normal;
-}
-
-#toh-filters-title A.toh-filters-clear{
-	display: inline-block;
-	border: 1px solid rgba(0, 0, 0, 0.2);
-	border-color:  rgba(0, 0, 0, 0.35) rgba(0, 0, 0, 0.2) rgba(0, 0, 0, 0.2) rgba(0, 0, 0, 0.35);
-	padding: 1px 7px;
-	margin-left: 10px;
-	background-color: rgba(255,255,255, 0.02);
-	font-size: 11px;
-	line-height: 100%;
-	color: #666;
-	text-decoration: none;
-	border-radius: 8px;
-	vertical-align: text-bottom;
-}
-#toh-filters-title A.toh-filters-clear:hover{
-	cursor: pointer;
-	background-color: rgba(255,255,255, 0.2);
-	border-color:  rgba(0, 0, 0, 0.2) rgba(0, 0, 0, 0.35) rgba(0, 0, 0, 0.35) rgba(0, 0, 0, 0.2);
-	color: #222;
-	box-shadow: 2px 2px 5px 0px rgba(0, 0, 0, 0.1);
-}
-
-#toh-filters-presets A{
-	display: block;
-	padding: 2px 5px;
-	border: 1px solid #aaa;
-	border-radius: 5px;
-	background-color: #ddd;	
-	text-decoration: none;
-	color: #464;
-	font-weight: bold;
-	box-shadow: 2px 2px 6px 0px rgba(0, 0, 0, 0.1);
-}
-
-#toh-filters-presets{
-	margin-bottom: 10px;
-}
-.toh-filters-subtitle{
-	font-size: 12px;
-	font-weight: bold;	
-	color: #888;
-	margin-bottom: 5px;
-}
-.toh-filters-list{
-	/* margin-bottom: 10px; */
-}
-.toh-filters-list UL{
-	padding-left: 15px;
-}
-.toh-filters-list-multi {
-	column-count: 5;
-	column-gap: 2em;
-}
-@media screen and (max-width: 1870px) {
-	.toh-filters-list-multi {
-		column-count: 4;
-	}
-}
-@media screen and (max-width: 1503px) {
-	.toh-filters-list-multi {
-		column-count: 3;
-	}
-}
-@media screen and (max-width: 1150px) {
-	.toh-filters-list-multi {
-		column-count: 2;
-	}
-}
-@media screen and (max-width: 780px) {
-	.toh-filters-list-multi {
-		column-count: 1;
-	}
-}
-
-.toh-filter{
-	line-height: 100%;
-	padding-bottom: 2px;
-}
-.toh-filter-preset{
-	margin-bottom: 5px;
-}
-.toh-filter-feature INPUT{
-	margin-right: 5px;
-}
-.toh-filter-feature INPUT:hover{
-	cursor: pointer;
-}
-.toh-filter-title{
-	width: 180px;
-	display: inline-block;
-	margin-right: 6px;
-}
-
-.toh-filter-description{
-	color: #999;
-	font-size: 12px;
-}
-.toh-filtgroup-title A I{
-	opacity: 0.4;
-}
-.toh-filtgroup-title A:hover{
-	cursor: default;
-}
-.toh-filtgroup[data-group=admin] UL A{
-	color: red;
-}
-
-#toh-filters-features .toh-filter-title{
-	width: 120px
-}
-#toh-filters-features .toh-filter-title A{
-	display: inline-block;
-}
-#toh-filters-features .toh-filter-title A:hover{
-	cursor: help;
-}
-
-
-/* Top Views ------------------------------------------------ */
-
-#toh-cols-container{
-	padding-bottom: 10px;
-	border-bottom: 1px solid #ddd;
-}
-
-.toh-cols-list UL{
-	padding-left: 15px;
-}
-.toh-col{
-	line-height: 100%;
-	padding-bottom: 1px;
-}
-.toh-col INPUT:hover{
-	cursor: pointer;
-}
-.toh-col A:hover{
-	cursor: help;
-}
+/* Column checkboxes -------------------------------------------------------- */
 
 .toh-cols-list-multi {
-column-count: 7;
-column-gap: 2em;
+	column-count: 5;
+	column-gap: 24px;
 }
-@media screen and (max-width: 1200px) {
-	.toh-cols-list-multi {
-		column-count: 6;
-	}
-}
-@media screen and (max-width: 1000px) {
-	.toh-cols-list-multi {
-		column-count: 5;
-	}
-}
-@media screen and (max-width: 800px) {
-	.toh-cols-list-multi {
-		column-count: 4;
-	}
-}
-@media screen and (max-width: 680px) {
-	.toh-cols-list-multi {
-		column-count: 3;
-	}
-}
-@media screen and (max-width: 540px) {
-	.toh-cols-list-multi {
-		column-count: 2;
-	}
-}
-.toh-group{
+.toh-group {
 	break-inside: avoid-column;
+	margin-bottom: 16px;
+}
+.toh-viewgroup-title {
+	margin-bottom: 5px;
+}
+.toh-viewgroup-title A:hover {
+	color: var(--text-muted);
+}
+.toh-viewgroup-title .toh-ico {
+	width: 13px;
+	height: 13px;
+	opacity: 0.8;
+}
+
+.toh-col {
+	display: flex;
+	align-items: baseline;
+	gap: 7px;
+	padding: 1px 0;
+}
+.toh-col INPUT[type=checkbox] {
+	flex: none;
+	width: 14px;
+	height: 14px;
+	margin: 0;
+	accent-color: var(--primary);
+	cursor: pointer;
+	transform: translateY(2px);
+}
+.toh-col A {
+	color: var(--text);
+	font-size: 13px;
+}
+.toh-col A:hover {
+	cursor: help;
+	color: var(--primary);
 }
 
 
+/* Export panel ------------------------------------------------------------- */
 
-.toh-cols-list A,
-.toh-filters-list A{
-	color: #000;
-	text-decoration: none;
+#toh-bot-buttons {
+	min-width: 210px;
+	font-size: 13px;
+	color: var(--text-muted);
 }
-.toh-viewgroup-title A,
-.toh-filtgroup-title A{
+#toh-bot-but-title {
+	margin-bottom: 10px;
+	color: var(--text);
 	font-size: 12px;
-	font-weight: bold;	
-	color: #888;
-	text-decoration: none;
-}
-
-
-
-/* Top Buttons ---------------------------------------------- */
-
-#toh-top-buttons{
-	margin-top: 16px;
-	min-height: 40px;
-	overflow: hidden;
-}
-.toh-buttons-left{
-	float: left;
-	margin-bottom: 12px;
-}
-.toh-buttons-right{
-	float: right;
-	margin-bottom: 12px;
-	padding-right: 12px;
-	text-align: right;
-}
-
-A.toh-but{
-	display: inline-block;
-	margin-left: 10px;
-	padding: 6px 12px;
-	text-decoration: none;
-	border: 1px solid var(--toh-border);
-	border-radius: var(--toh-radius);
-	font-size: 12px;
-	font-weight: 500;
-	line-height: 1.4;
-	background: var(--toh-surface);
-	color: var(--toh-text-secondary);
-	transition: all var(--toh-transition);
-	box-shadow: var(--toh-shadow-sm);
-}
-
-A.toh-but-clearallfilters{
-	color: var(--toh-text);
-	border-color: var(--toh-primary);
 	font-weight: 600;
-	letter-spacing: 0.3px;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
 }
-
-A.toh-but:hover,
-#toh-filters-presets A:hover{
-	background: linear-gradient(135deg, var(--toh-primary) 0%, var(--toh-primary-dark) 100%);
-	color: #fff;
-	border-color: var(--toh-primary);
-	transform: translateY(-1px);
-	box-shadow: var(--toh-shadow);
+#toh-bot-buttons SELECT {
+	width: 100%;
+	height: 32px;
+	padding: 0 8px;
+	border: 1px solid var(--border);
+	border-radius: var(--r-sm);
+	background: var(--surface);
+	font-size: 13px;
+	cursor: pointer;
+	transition: border-color var(--t), box-shadow var(--t);
 }
-A.toh-but:hover{
-	border-color: var(--toh-primary);
-}
-
-
-/* Bot section ------------------------------------------------*/
-#toh-bot{
-	margin-top: -1px;
-	position: relative;	
-	border-top: 1px solid var(--toh-border);
-	background: linear-gradient(to bottom, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0) 100%);
-	background-color: var(--toh-surface);
-	border-radius: 0 0 var(--toh-radius-lg) var(--toh-radius-lg);
-}
-
-
-/* Bot Buttons ---------------------------------------------- */
-#toh-bot-buttons{
-	padding: 20px 16px;
-	padding-bottom: 16px;
-	text-align: center;
-	font-size: 14px;
-	line-height: 2;
-	color: var(--toh-text-secondary);
-}
-#toh-bot-but-title{
-	color: var(--toh-text);
-	font-weight: 500;
-}
-#toh-bot-buttons Select{
-	margin-left: 6px;
-	margin-right: 8px;
-	color: var(--toh-text);
-	margin-bottom: 5px;
-	border: 1px solid var(--toh-border);
-	border-radius: var(--toh-radius);
-	padding: 4px 8px;
-	background: var(--toh-surface);
-	transition: border-color var(--toh-transition);
-}
-#toh-bot-buttons Select:focus{
-	border-color: var(--toh-primary);
+#toh-bot-buttons SELECT:focus {
+	border-color: var(--primary);
+	box-shadow: 0 0 0 3px var(--primary-ring);
 	outline: none;
-	box-shadow: 0 0 0 3px rgba(0, 153, 217, 0.15);
 }
-#toh-bot-buttons .toh-count-cols-full{
-	color: var(--toh-text);
-	font-weight: 500;
+.toh-export-note {
+	margin-top: 6px;
+	font-size: 12px;
+	color: var(--text-faint);
 }
-#toh-bot-buttons .toh-count-cols-full B{
-}
-#toh-bot-buttons .toh-count-cols-full I{
+#toh-bot-buttons .toh-count-cols-full B,
+#toh-bot-buttons .toh-count-cols-full I {
+	color: var(--text-muted);
 	font-style: normal;
+	font-weight: 600;
 }
-#toh-bot-but-group{
+#toh-bot-but-group {
+	display: flex;
+	gap: 6px;
+	margin-top: 12px;
 }
-#toh-bot-buttons .toh-but{
-	padding: 8px 16px;
-	margin-bottom: 5px;
+#toh-bot-but-group .toh-but {
+	flex: 1;
+	justify-content: center;
 }
 
 
+/* User preset save popup --------------------------------------------------- */
 
-
-
-
+#toh-upreset-popup-save {
+	position: absolute;
+	z-index: 1000;
+	padding: 14px;
+	border: 1px solid var(--border);
+	border-radius: var(--r);
+	background: var(--surface);
+	box-shadow: var(--shadow-lg);
+	font-size: 12px;
+}
+#toh-upreset-popup-save INPUT {
+	width: 100%;
+	height: 30px;
+	padding: 0 8px;
+	border: 1px solid var(--border);
+	border-radius: var(--r-sm);
+	background: var(--surface-sunken);
+}
+#toh-upreset-popup-save INPUT:focus {
+	border-color: var(--primary);
+	box-shadow: 0 0 0 3px var(--primary-ring);
+	outline: none;
+}
+#toh-upreset-popup-save .toh-desc-mini {
+	margin: 5px 0 9px;
+	color: var(--text-faint);
+	font-size: 11px;
+}
+#toh-upreset-popup-save BUTTON {
+	width: 100%;
+	height: 30px;
+	border: 1px solid var(--border);
+	border-radius: var(--r-sm);
+	background: var(--surface);
+	color: var(--text-muted);
+	font-size: 12px;
+	font-weight: 500;
+	cursor: pointer;
+	/* named, not "all": "all" makes the browser check every animatable
+	   property on each style change, layout ones included */
+	transition: background-color var(--t), border-color var(--t), color var(--t), opacity var(--t), box-shadow var(--t);
+}
+#toh-upreset-popup-save BUTTON:hover {
+	background: var(--hover);
+	border-color: var(--border-strong);
+	color: var(--text);
+}
 
 
 /* #####################################################################################################
-##### Tabulator TABLE ##################################################################################
+##### Tabulator table ##################################################################################
 ######################################################################################################## */
 
-/* Cells Formatters ----------------------------------------- */
-
-/* yes / no / unknown marks, for JTAG, Serial, VLAN and the like.
-   Deliberately unscoped: the details popup renders them through the same
-   formatter, and scoping to #toh-table left them uncoloured there. */
-.toh-mark-yes{
-	color: var(--toh-ok);
-}
-.toh-mark-no{
-	color: var(--toh-danger);
-	opacity: 0.75;
-}
-/* the value is explicitly '-': nobody has an answer */
-.toh-mark-unknown.dash{
-	color: var(--toh-text-secondary);
-	opacity: 0.6;
-}
-/* nothing filled in at all, so keep it quiet */
-.toh-mark-unknown.empty{
-	color: var(--toh-border-strong);
-}
-/* something is filled in that is neither yes nor no: worth a second look */
-.toh-mark-unknown.unknown{
-	color: var(--toh-warn);
-}
-/* how many pictures the single icon stands for */
-#toh-table .tabulator-cell .cell-image-count{
-	font-size: 9px;
-	font-weight: 700;
-	vertical-align: super;
-	/* margin-left: -3px; */
-	color: #0081b3;
+#toh-table-container {
+	/* replaced by the measured height in tohSetTableHeight() once built */
+	height: 640px;
+	border-radius: 0 0 var(--r-lg) var(--r-lg);
+	overflow: hidden;
 }
 
-/* the preview says why it is empty rather than showing nothing at all */
-#toh-image-preview .toh-preview-error{
-	padding: 8px 12px;
+#toh-table.tabulator {
+	border: 0;
+	background: transparent;
+	font-size: 13px;
+	overflow-anchor: none;
+}
+
+/* overflow-y is set by tohSetTableHeight(): the rows only scroll when a full
+   page would not have fitted in the viewport */
+#toh-table.tabulator .tabulator-tableholder {
+	background: var(--surface);
+	overflow-x: scroll;
+}
+#toh-table.tabulator .tabulator-tableholder:focus {
+	outline: none;
+}
+
+
+/* Column headers ----------------------------------------------------------- */
+
+#toh-table .tabulator-header {
+	border: 0;
+	border-bottom: 1px solid var(--border);
+	background: var(--surface-sunken);
+	color: var(--text-muted);
+}
+
+#toh-table .tabulator-header .tabulator-col {
+	border-right: 1px solid var(--border-soft);
+	background: var(--surface-sunken);
+	transition: background var(--t);
+}
+#toh-table .tabulator-header .tabulator-col:hover {
+	background: var(--hover);
+}
+
+#toh-table .tabulator-header .tabulator-col .tabulator-col-content {
+	padding: 8px 8px 6px;
+}
+/* no uppercase here: the columns are narrow and the titles are already
+   abbreviated ("C.Release", "S.Upgrade"), so the extra width just truncates */
+#toh-table .tabulator-header .tabulator-col .tabulator-col-content .tabulator-col-title {
+	/* clip, not ellipsis: the sort arrow is absolutely positioned over the right
+	   end of this element, so its box is narrower than the space the text can
+	   actually occupy. With ellipsis the browser measures the box and renders
+	   "2..." for a "2.4 GHz" that fits the column perfectly well. */
+	text-overflow: clip;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--text-muted);
+}
+
+#toh-table .tabulator-header .tabulator-col-sorter {
+	display: block;
+	position: absolute;
+	top: 26px;
+	right: 0;
+	z-index: 10;
+}
+#toh-table .tabulator-col[aria-sort=ascending] .tabulator-col-title,
+#toh-table .tabulator-col[aria-sort=descending] .tabulator-col-title {
+	color: var(--primary);
+}
+
+/* header filter inputs ----- */
+#toh-table .tabulator-header-filter {
+	padding-right: 14px;
+	margin-top: 2px;
+}
+#toh-table .tabulator-header-filter INPUT {
+	height: 24px;
+	padding: 2px 7px !important;
+	border: 1px solid var(--border);
+	border-radius: var(--r-sm);
+	background: var(--surface);
+	color: var(--text);
 	font-size: 12px;
 	line-height: 1.4;
-	color: #a00;
-	max-width: 220px;
+	transition: border-color var(--t), box-shadow var(--t);
+}
+#toh-table .tabulator-header-filter INPUT::placeholder {
+	color: var(--text-faint);
+}
+#toh-table .tabulator-header-filter INPUT:focus {
+	position: relative;
+	left: 0;
+	z-index: 9999;
+	border-color: var(--primary);
+	background: var(--surface);
+	box-shadow: 0 0 0 3px var(--primary-ring);
+	outline: none;
 }
 
-/* not a link: it marks a device that has no picture of its own */
-#toh-table-container .tabulator-cell .cell-image.generic{
-	color: #ccc;
-	cursor: default;
+
+/* Rows --------------------------------------------------------------------- */
+
+/* No zebra and no vertical rules: across ~40 columns they turn into noise.
+   One soft horizontal divider per row, and a clear hover, is enough. */
+#toh-table .tabulator-row {
+	min-height: 0;
+	border-bottom: 1px solid var(--border-soft);
+	background: var(--surface);
+	transition: background var(--t);
+}
+#toh-table .tabulator-row.tabulator-row-even,
+#toh-table .tabulator-row.tabulator-row-odd {
+	background: var(--surface);
+}
+
+/* inline-flex, not flex: Tabulator lays cells out inline, and a block-level
+   cell stacks the whole row vertically */
+/* inline-flex, not flex: Tabulator lays cells out inline, and a block-level
+   cell stacks the whole row vertically.
+   The padding stays modest because the column widths are fixed - every extra
+   pixel here is taken out of the visible text, not added to the column. */
+/* The density switch. --row-h is set on BODY by tohApplyDensity() from the same
+   toh_densities table that feeds tabulatorOptions.rowHeight, so the two cannot
+   drift. !important because Tabulator writes the height inline on every row and
+   keeps those elements across a redraw. */
+#toh-table .tabulator-row {
+	height: var(--row-h, 34px) !important;
+}
+
+#toh-table .tabulator-row .tabulator-cell {
+	display: inline-flex;
+	align-items: center;
+	padding: 0 8px;
+	border-right: 0;
+	color: var(--text);
+}
+
+#toh-table .tabulator-row:hover,
+#toh-table .tabulator-row.tabulator-row-odd:hover,
+#toh-table .tabulator-row.tabulator-row-even:hover {
+	background: var(--hover);
+}
+#toh-table .tabulator-row:hover .tabulator-frozen {
+	background: var(--hover);
+}
+
+/* Frozen (Brand / Model) columns stay put while the rest scrolls sideways */
+#toh-table .tabulator-row .tabulator-frozen,
+#toh-table .tabulator-header .tabulator-frozen {
+	background: inherit;
+}
+#toh-table .tabulator-header .tabulator-frozen {
+	background: var(--surface-sunken);
+}
+#toh-table .tabulator-frozen.tabulator-frozen-left {
+	border-right: 1px solid var(--border);
+}
+#toh-table .tabulator-row .tabulator-frozen.tabulator-frozen-left:last-of-type,
+#toh-table .tabulator-header .tabulator-frozen.tabulator-frozen-left:last-of-type {
+	box-shadow: var(--shadow-frozen);
+}
+#toh-table .tabulator-cell[tabulator-field=brand],
+#toh-table .tabulator-cell[tabulator-field=model] {
+	font-weight: 500;
+}
+
+/* the row whose details popup is open */
+#toh-table .tabulator-row.popup-active,
+#toh-table .tabulator-row.popup-active:hover,
+#toh-table .tabulator-row.popup-active:hover .tabulator-frozen {
+	background: var(--primary-soft);
+}
+#toh-table .tabulator-row.popup-active {
+	box-shadow: inset 3px 0 0 var(--primary);
+}
+
+/* OpenWrt's own hardware */
+#toh-table .tabulator-row.brand-owrt,
+#toh-table .tabulator-row.brand-owrt .tabulator-frozen {
+	background: var(--pending-bg);
+}
+#toh-table .tabulator-row.brand-owrt:hover,
+#toh-table .tabulator-row.brand-owrt:hover .tabulator-frozen {
+	background: var(--hover);
 }
 
 
+/* Cells -------------------------------------------------------------------- */
 
-/* Image Preview -------------------------------------------- */
+#toh-table .tabulator-cell A.tlink {
+	display: inline-flex;
+	align-items: center;
+	color: var(--text-muted);
+}
+#toh-table .tabulator-cell A.tlink.supportedsincecommit {
+	display: inline;
+}
+A.tlink .toh-ico {
+	width: 15px;
+	height: 15px;
+}
+
+A.tlink.firmwareopenwrtinstallurl,
+A.tlink.firmwareopenwrtsnapshotinstallurl {
+	color: #dc2626;
+}
+A.tlink.firmwareopenwrtupgradeurl,
+A.tlink.firmwareopenwrtsnapshotupgradeurl {
+	color: #16a34a;
+}
+A.tlink.firmwareoemstockurl {
+	color: #c026d3;
+}
+A.tlink.VIRT_firm {
+	color: var(--primary);
+}
+A.tlink.VIRT_firm .dlerror {
+	color: var(--warn);
+	opacity: 0.5;
+}
+#toh-table A.tlink:hover {
+	color: var(--text);
+}
+#toh-table A.tlink.VIRT_firm:hover .dlerror {
+	color: var(--danger);
+}
+
+#toh-table .tabulator-cell[tabulator-field=VIRT_edit] A {
+	color: var(--text-faint);
+}
+#toh-table .tabulator-cell[tabulator-field=VIRT_edit] A:hover {
+	color: var(--primary);
+}
+.tabulator-col[tabulator-field="VIRT_edit"] .tabulator-col-title {
+	display: none;
+}
+
+/* Status badges ------------------------------------------------------------
+	Used for the release / availability columns, where "which release?" and
+	"can I still buy it?" are the two questions people scan for.
+*/
+.toh-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	max-width: 100%;
+	padding: 1px 8px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 18px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.toh-badge::before {
+	content: '';
+	flex: none;
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: currentColor;
+}
+.toh-badge-ok {
+	background: var(--ok-bg);
+	color: var(--ok);
+}
+.toh-badge-pending {
+	background: var(--pending-bg);
+	color: var(--pending);
+}
+.toh-badge-dead {
+	background: var(--dead-bg);
+	color: var(--dead);
+}
+.toh-badge-none {
+	background: transparent;
+	color: var(--text-faint);
+	padding-left: 0;
+}
+.toh-badge-none::before {
+	display: none;
+}
+
+/* Device : brand above model ------------------------------------------------
+   Two lines need about 28px, which fits a comfortable row and exactly fills a
+   compact one. Rather than let the text touch the divider, compact drops the
+   brand line: trading context for density is what that switch is for, and the
+   brand is still a hover and a click away. */
+.toh-dev {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	min-width: 0;
+	line-height: 1.25;
+}
+.toh-dev-brand {
+	color: var(--text-faint);
+	font-size: 10px;
+	font-weight: 500;
+	letter-spacing: 0.01em;
+}
+.toh-dev-brand,
+.toh-dev-model {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.toh-dev-model {
+	color: var(--text);
+	font-weight: 600;
+}
+BODY.toh-density-compact .toh-dev-brand {
+	display: none;
+}
+
+
+/* A cell holding one fact on two lines --------------------------------------
+   The chip and its clock, the Wi-Fi bands and their modes, the ethernet ports:
+   each was two or three narrow columns saying one thing between them. Same
+   treatment as the Device column, including dropping the second line when the
+   rows are compact. */
+.toh-stack {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	min-width: 0;
+	line-height: 1.25;
+}
+.toh-stack-main,
+.toh-stack-sub {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.toh-stack-sub {
+	color: var(--text-faint);
+	font-size: 10px;
+}
+BODY.toh-density-compact .toh-stack-sub {
+	display: none;
+}
+.toh-none {
+	color: var(--text-faint);
+}
+
+
+/* Downloads inside the details view -----------------------------------------
+   One primary action for the current build; the wiki-recorded images named and
+   quiet underneath. See tohDeviceDownloadsHtml(). */
+.toh-dlrow {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 14px;
+	padding: 10px 16px;
+	border-bottom: 1px solid var(--border-soft);
+}
+.toh-dlrow-main {
+	height: 36px;
+	font-size: 13px;
+}
+.toh-dlrow-main .toh-ico {
+	width: 15px;
+	height: 15px;
+}
+.toh-dlrow-olders {
+	display: inline-flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px 12px;
+	min-width: 0;
+}
+.toh-dlrow-note {
+	color: var(--text-faint);
+	font-size: 12px;
+}
+A.toh-dlrow-old {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	color: var(--text-muted);
+	font-size: 12px;
+	font-weight: 500;
+}
+A.toh-dlrow-old:hover {
+	color: var(--text);
+}
+A.toh-dlrow-old .toh-ico {
+	width: 13px;
+	height: 13px;
+	opacity: 0.7;
+}
+.toh-dlrow-rel {
+	padding: 0 6px;
+	border-radius: 999px;
+	background: var(--pending-bg);
+	color: var(--pending);
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 17px;
+}
+
+
+/* Links : five destinations in one cell -------------------------------------
+   Still five separate targets rather than a menu, so a glance down the column
+   still says which devices have a wiki page or a forum thread. Each is a real
+   button-sized hit area with its own name; the header repeats the icons in the
+   same order, which is what makes the row underneath readable. */
+.toh-links {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+}
+A.toh-link {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	border-radius: var(--r-sm);
+	color: var(--text-faint);
+	transition: background var(--t), color var(--t);
+}
+A.toh-link:hover {
+	background: var(--primary-soft);
+	color: var(--primary);
+}
+A.toh-link .toh-ico {
+	width: 15px;
+	height: 15px;
+}
+/* holds the slot open so the icons stay under their header icon */
+.toh-link-off {
+	display: inline-block;
+	width: 22px;
+	height: 22px;
+}
+
+/* the same five icons above them, as a legend */
+.toh-links-title {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	opacity: 0.45;
+}
+.toh-links-title .toh-ico {
+	width: 13px;
+	height: 13px;
+}
+
+
+/* Download : the release you would get -------------------------------------
+   A version rather than another download glyph, because three identical arrows
+   never said which of them handed you 25.12 and which handed you 19.07. */
+.toh-dl {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	max-width: 100%;
+	padding: 1px 8px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 18px;
+	white-space: nowrap;
+	overflow: hidden;
+	transition: background var(--t), color var(--t);
+}
+.toh-dl .toh-ico {
+	flex: none;
+	width: 12px;
+	height: 12px;
+}
+
+/* a build openwrt.org is shipping today */
+A.toh-dl-current {
+	background: var(--ok-bg);
+	color: var(--ok);
+}
+A.toh-dl-current:hover {
+	background: var(--ok);
+	color: #fff;
+}
+
+/* no current build: whatever the wiki last recorded, which can be years old.
+   Muted rather than alarming - it is still the only image there is. */
+A.toh-dl-old {
+	background: var(--pending-bg);
+	color: var(--pending);
+}
+A.toh-dl-old:hover {
+	background: var(--pending);
+	color: #fff;
+}
+
+.toh-dl-none {
+	color: var(--text-faint);
+	font-weight: 400;
+}
+
+/* Something on this device does not work under OpenWrt. Sits next to the
+   release pill rather than replacing it: the two are different questions, and
+   376 devices answer "yes" to one and "not entirely" to the other. */
+.toh-caveat {
+	display: inline-flex;
+	vertical-align: middle;
+	margin-left: 4px;
+	color: var(--pending);
+}
+.toh-caveat .toh-ico {
+	width: 13px;
+	height: 13px;
+}
+
+
+/* yes / no / unknown markers.
+   Deliberately unscoped: the same marks are rendered in the details popup, and
+   scoping them to #toh-table left them uncoloured there. */
+.toh-mark-yes {
+	color: var(--ok);
+}
+.toh-mark-no {
+	color: var(--dead);
+	opacity: 0.75;
+}
+.toh-mark-unknown.dash {
+	color: var(--text-faint);
+}
+.toh-mark-unknown.empty {
+	color: var(--border-strong);
+}
+.toh-mark-unknown.unknown {
+	color: var(--warn);
+}
+
+#toh-table-container .tabulator-cell .cell-image.generic {
+	color: var(--border-strong);
+}
+#toh-table .tabulator-cell .cell-image.generic:hover {
+	color: var(--text-muted);
+}
+
+.toh-spacer {
+	display: inline-block;
+	height: 1px;
+}
+#toh-table .tabulator-cell .toh-spacer {
+	width: 4px;
+}
+
+
+/* Filtered column tinting -------------------------------------------------- */
+
+#toh-table .tabulator-header .tabulator-col.toh-col-filter {
+	background: var(--filt-sidebar-bg);
+	box-shadow: inset 0 -2px 0 var(--filt-sidebar);
+}
+#toh-table .tabulator-header .tabulator-col.toh-col-headerfilter {
+	background: var(--filt-header-bg);
+	box-shadow: inset 0 -2px 0 var(--filt-header);
+}
+#toh-table .tabulator-header .tabulator-col.toh-col-allfilter {
+	background: var(--filt-all-bg);
+	box-shadow: inset 0 -2px 0 var(--filt-all);
+}
+
+
+/* Pagination footer -------------------------------------------------------- */
+
+/* the last thing in the card, so it carries the rounded bottom edge */
+#toh-table.tabulator .tabulator-footer {
+	padding: 8px 12px;
+	border: 0;
+	border-top: 1px solid var(--border);
+	border-radius: 0 0 var(--r-lg) var(--r-lg);
+	background: var(--surface-sunken);
+	color: var(--text-muted);
+}
+
+#toh-table .tabulator-footer .tabulator-page-counter {
+	color: var(--text-muted);
+	font-size: 12px;
+}
+#toh-table .tabulator-footer .tabulator-paginator LABEL {
+	color: var(--text-muted);
+	font-size: 12px;
+	font-weight: 500;
+}
+#toh-table .tabulator-footer .tabulator-page-size {
+	margin-right: 14px;
+	height: 26px;
+	padding: 0 6px;
+	border: 1px solid var(--border);
+	border-radius: var(--r-sm);
+	background: var(--surface);
+	font-size: 12px;
+	cursor: pointer;
+}
+#toh-table button.tabulator-page {
+	height: 26px;
+	min-width: 26px;
+	margin: 0 2px;
+	padding: 0 8px;
+	border: 1px solid var(--border);
+	border-radius: var(--r-sm);
+	background: var(--surface);
+	color: var(--text-muted);
+	font-size: 12px;
+	/* named, not "all": "all" makes the browser check every animatable
+	   property on each style change, layout ones included */
+	transition: background-color var(--t), border-color var(--t), color var(--t), opacity var(--t), box-shadow var(--t);
+}
+#toh-table button.tabulator-page:not(:disabled):hover {
+	background: var(--hover);
+	border-color: var(--border-strong);
+	color: var(--text);
+}
+#toh-table button.tabulator-page.active,
+#toh-table button.tabulator-page.active:hover {
+	border-color: var(--primary);
+	background: var(--primary);
+	color: #fff;
+	font-weight: 600;
+}
+
+.toh-table-loading {
+	margin-right: 10px;
+	color: var(--primary);
+	vertical-align: middle;
+}
+
+
+/* Cell tooltips ------------------------------------------------------------
+	Tabulator hides these on mouseout, which never fires on a touch screen - so
+	tapping a row left a stray white box with the model name in it, sitting over
+	the page next to the details popup. Tooltips are a hover affordance; on a
+	touch device there is nothing for them to do.
+*/
+@media (hover: none) {
+	.tabulator-tooltip {
+		display: none !important;
+	}
+}
+
+.tabulator-tooltip {
+	border: 1px solid var(--border);
+	border-radius: var(--r-sm);
+	background: var(--surface);
+	color: var(--text);
+	box-shadow: var(--shadow-lg);
+	font-size: 12px;
+}
+
+
+/* Image preview ------------------------------------------------------------ */
 
 #toh-image-preview {
 	position: absolute;
 	display: none;
-	z-index: 10005; /* over details popup */
-	border: 1px solid var(--toh-border);
-	background-color: var(--toh-surface);
-	box-shadow: var(--toh-shadow-lg);
-	border-radius: var(--toh-radius);
-	overflow: hidden;
+	z-index: 10005;					/* over the details popup */
+	padding: 4px;
+	border: 1px solid var(--border);
+	border-radius: var(--r);
+	background: var(--surface);
+	box-shadow: var(--shadow-lg);
 }
 #toh-image-preview img {
 	max-width: 300px;
 	max-height: 300px;
 	display: block;
+	border-radius: var(--r-sm);
 }
 
 
-/* Image Lightbox ------------------------------------------- */
+/* #####################################################################################################
+##### Cell details popup ###############################################################################
+######################################################################################################## */
+
+.toh-details-container {
+	border: 0;
+	padding: 0;
+	background: transparent;
+	box-shadow: none;
+	height: auto !important;
+	overflow: auto;
+}
+
+.toh-details-border {
+	margin: 6px 16px 16px 6px;
+	border: 1px solid var(--border);
+	border-radius: var(--r-lg);
+	background: var(--surface);
+	box-shadow: var(--shadow-lg);
+	overflow: hidden;
+}
+
+.toh-details-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 16px;
+	padding: 12px 16px;
+	border-bottom: 1px solid var(--border);
+	background: var(--surface);
+	color: var(--text);
+	font-size: 14px;
+	font-weight: 600;
+}
+.toh-details-head A {
+	color: var(--text);
+}
+
+.toh-details-close {
+	display: flex;
+	color: var(--text-faint);
+	cursor: pointer;
+	transition: color var(--t);
+}
+.toh-details-close:hover {
+	color: var(--danger);
+}
+.toh-details-close .toh-ico {
+	width: 18px;
+	height: 18px;
+}
+
+.toh-details-content {
+	column-count: 4;
+	column-gap: 20px;
+	padding: 16px;
+	background: var(--surface-sunken);
+}
+@media screen and (max-width: 1600px) { .toh-details-content { column-count: 3; } }
+@media screen and (max-width: 1290px) { .toh-details-content { column-count: 2; } }
+@media screen and (max-width: 960px)  { .toh-details-content { column-count: 1; } }
+
+.toh-details-group {
+	margin-bottom: 16px;
+	break-inside: avoid;
+}
+
+.toh-details-title {
+	padding: 0 0 6px 2px;
+	color: var(--text-faint);
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+
+TABLE.toh-details-table {
+	width: 100%;
+	border-spacing: 0;
+	border-collapse: separate;
+	border: 1px solid var(--border);
+	border-radius: var(--r);
+	background: var(--surface);
+	overflow: hidden;
+}
+.toh-details-table TD {
+	padding: 7px 10px;
+	font-size: 13px;
+	line-height: 1.5;
+	vertical-align: top;
+}
+.toh-details-table TR + TR TD {
+	border-top: 1px solid var(--border);
+}
+
+.toh-details-key {
+	width: 130px;
+	background: var(--surface-sunken);
+	border-right: 1px solid var(--border);
+	text-align: right;
+	font-weight: 500;
+	color: var(--text-muted);
+}
+/* the key is the full field name now, so there is nothing left to reveal */
+
+.toh-details-value {
+	color: var(--text);
+	word-break: break-word;
+}
+
+/* Link rows span the table: their label already names the destination, so a key
+   cell beside them would only repeat it. One link per row, so the group keeps
+   an even rhythm. */
+.toh-details-link {
+	background: var(--surface);
+}
+.toh-details-link A {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+}
+.toh-details-link .toh-ico {
+	width: 15px;
+	height: 15px;
+	flex: none;
+}
+.toh-details-link .toh-spacer {
+	display: none;
+}
+.toh-details-value .toh-ico {
+	width: 15px;
+	height: 15px;
+}
+.toh-details-value .toh-spacer {
+	width: 14px;
+	height: 3px;
+	display: block;
+}
+
+.toh-details-bottom {
+	height: 5px;
+}
+
+.toh-details-value A.cell-image{
+	text-decoration: none;
+}
+
+/* #####################################################################################################
+##### Compare ##########################################################################################
+######################################################################################################## */
+
+#toh-table .toh-compare-check {
+	width: 15px;
+	height: 15px;
+	margin: 0;
+	accent-color: var(--primary);
+	cursor: pointer;
+}
+#toh-table .toh-compare-check:disabled {
+	cursor: not-allowed;
+	opacity: 0.35;
+}
+
+/* Tray --------------------------------------------------------------------- */
+
+/* The tray is fixed to the bottom, so the page needs room under it or it sits
+   over the last of the sidebar options and the footer. The exact height is set
+   by tohFitTray(): a guessed constant left a visible gap under the footer. */
+BODY.toh-tray-open #toh-page {
+	padding-bottom: var(--tray-h, 60px);
+}
+BODY.toh-tray-open #toh-sidebar-inner {
+	padding-bottom: calc(var(--tray-h, 60px) + 20px);
+}
+
+#toh-compare-tray {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 930;
+	border-top: 1px solid var(--border);
+	background: var(--surface);
+	box-shadow: 0 -6px 24px rgba(17, 24, 39, 0.1);
+}
+:root[data-theme="dark"] #toh-compare-tray {
+	box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.45);
+}
+
+.toh-compare-tray-inner {
+	max-width: var(--shell-max);
+	margin: 0 auto;
+	padding: 12px var(--gutter);
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+#toh-compare-label {
+	flex: none;
+	color: var(--text-muted);
+	font-size: 13px;
+}
+#toh-compare-label B {
+	color: var(--text);
+}
+
+#toh-compare-chips {
+	flex: 1 1 auto;
+	min-width: 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.toh-compare-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 6px 3px 10px;
+	border: 1px solid var(--border);
+	border-radius: 999px;
+	background: var(--surface-sunken);
+	color: var(--text);
+	font-size: 12px;
+	white-space: nowrap;
+}
+A.toh-compare-drop {
+	display: inline-flex;
+	color: var(--text-faint);
+}
+A.toh-compare-drop:hover {
+	color: var(--danger);
+}
+A.toh-compare-drop .toh-ico {
+	width: 12px;
+	height: 12px;
+}
+
+#toh-compare-tray-actions {
+	flex: none;
+	display: flex;
+	gap: 8px;
+}
+
+A.toh-but-primary,
+BUTTON.toh-but-primary {
+	border-color: var(--primary);
+	background: var(--primary);
+	color: #fff;
+}
+A.toh-but-primary:hover,
+BUTTON.toh-but-primary:hover:not(:disabled) {
+	border-color: var(--primary-hover);
+	background: var(--primary-hover);
+	color: #fff;
+}
+BUTTON.toh-but-primary:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+/* Panel -------------------------------------------------------------------- */
+
+#toh-compare-panel {
+	margin-top: 4px;
+	overflow: hidden;
+}
+
+#toh-compare-head {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 16px 18px;
+	border-bottom: 1px solid var(--border);
+}
+#toh-compare-head H2 {
+	font-size: 18px;
+}
+#toh-compare-sub {
+	margin-top: 2px;
+	color: var(--text-muted);
+	font-size: 13px;
+}
+#toh-compare-sub B {
+	color: var(--text);
+}
+
+#toh-compare-body {
+	overflow-x: auto;
+}
+.toh-compare-empty {
+	padding: 32px 18px;
+	color: var(--text-muted);
+}
+
+TABLE.toh-compare-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+.toh-compare-table TH,
+.toh-compare-table TD {
+	padding: 9px 14px;
+	text-align: left;
+	vertical-align: top;
+	border-bottom: 1px solid var(--border-soft);
+}
+.toh-compare-table THEAD TH {
+	position: sticky;
+	top: 0;
+	z-index: 2;
+	border-bottom: 1px solid var(--border);
+	background: var(--surface-sunken);
+	white-space: nowrap;
+}
+/* each device column is a little card: photo, name (opens details), support
+   badge, and forum / wiki links */
+.toh-compare-table THEAD TH.toh-compare-devhead {
+	vertical-align: top;
+	padding: 12px 10px;
+	min-width: 168px;
+	white-space: normal;
+}
+.toh-compare-card {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 3px;
+	width: 100%;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: inherit;
+	font: inherit;
+	text-align: center;
+	cursor: pointer;
+}
+.toh-compare-thumb {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 104px;
+	height: 78px;
+	margin-bottom: 4px;
+	border-radius: var(--r-sm);
+	background: var(--surface-sunken);
+	color: var(--text-faint);
+	overflow: hidden;
+}
+.toh-compare-thumb .toh-ico {			/* the placeholder, behind the photo */
+	width: 22px;
+	height: 22px;
+}
+.toh-compare-img {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	background: var(--surface);
+}
+.toh-compare-thumb.is-generic .toh-compare-img {
+	display: none;						/* no photo, or it failed to load */
+}
+.toh-compare-brand {
+	display: block;
+	color: var(--text-muted);
+	font-size: 11px;
+	font-weight: 500;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+.toh-compare-model {
+	display: block;
+	color: var(--text);
+	font-size: 15px;
+	font-weight: 600;
+}
+.toh-compare-card:hover .toh-compare-model {
+	text-decoration: underline;			/* the name is the way in to the details */
+}
+.toh-compare-badge {
+	margin-top: 6px;
+}
+.toh-compare-devlinks {
+	display: flex;
+	justify-content: center;
+	gap: 5px;
+	margin-top: 8px;
+}
+.toh-compare-devlink {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	border: 1px solid var(--border);
+	border-radius: var(--r-sm);
+	color: var(--text-muted);
+	transition: background var(--t), color var(--t), border-color var(--t);
+}
+.toh-compare-devlink:hover {
+	background: var(--primary-soft);
+	border-color: var(--primary);
+	color: var(--primary);
+}
+.toh-compare-devlink .toh-ico {
+	width: 14px;
+	height: 14px;
+}
+
+/* the attribute name column stays put while the devices scroll sideways */
+.toh-compare-table .toh-compare-rowhead {
+	position: sticky;
+	left: 0;
+	z-index: 1;
+	width: 220px;
+	min-width: 180px;
+	background: var(--surface);
+	color: var(--text-muted);
+	font-weight: 500;
+}
+.toh-compare-table THEAD .toh-compare-rowhead {
+	z-index: 3;
+	background: var(--surface-sunken);
+}
+
+.toh-compare-table TR.toh-compare-section TH {
+	background: var(--surface-sunken);
+	color: var(--text);
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+.toh-compare-table TR.toh-compare-section TD {
+	background: var(--surface-sunken);
+}
+
+/* Rows where the devices differ.
+   Tinting the whole row made a screen of them look uniformly highlighted, which
+   told you nothing. The row keeps a quiet marker, and the values that actually
+   differ from each other carry the emphasis. */
+.toh-compare-table TR.is-diff .toh-compare-rowhead {
+	box-shadow: inset 3px 0 0 var(--primary);
+	color: var(--text);
+	font-weight: 600;
+}
+.toh-compare-table TR.is-diff TD {
+	background: var(--primary-soft);
+	color: var(--text);
+	font-weight: 500;
+}
+/* rows everyone agrees on recede */
+.toh-compare-table TR:not(.is-diff):not(.toh-compare-section) TD,
+.toh-compare-table TR:not(.is-diff):not(.toh-compare-section) .toh-compare-rowhead {
+	color: var(--text-muted);
+}
+
+/* "Compare against the first device" */
+.toh-compare-table TH.is-ref,
+.toh-compare-table TD.is-ref {
+	background: var(--surface-sunken);
+}
+.toh-compare-table TD.is-off-ref {
+	background: var(--pending-bg);
+	color: var(--pending);
+	font-weight: 600;
+}
+.toh-compare-reftag {
+	display: inline-block;
+	margin-top: 4px;
+	padding: 1px 7px;
+	border-radius: 999px;
+	background: var(--border);
+	color: var(--text-muted);
+	font-size: 10px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.toh-switch {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	color: var(--text-muted);
+	font-size: 13px;
+	cursor: pointer;
+	white-space: nowrap;
+}
+.toh-switch INPUT {
+	width: 15px;
+	height: 15px;
+	margin: 0;
+	accent-color: var(--primary);
+	cursor: pointer;
+}
+
+#toh-compare-opts {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px 18px;
+	justify-content: flex-end;
+}
+
+.toh-compare-none {
+	color: var(--text-faint);
+}
+
+@media screen and (max-width: 760px) {
+	.toh-compare-tray-inner {
+		flex-wrap: wrap;
+		gap: 8px;
+		padding: 10px 12px;
+	}
+	#toh-compare-tray-actions {
+		margin-left: auto;
+	}
+	.toh-compare-table .toh-compare-rowhead {
+		width: 130px;
+		min-width: 130px;
+	}
+	.toh-compare-table TH,
+	.toh-compare-table TD {
+		padding: 8px 10px;
+	}
+}
+
+
+/* #####################################################################################################
+##### Advanced search ##################################################################################
+######################################################################################################## */
+
+#toh-adv-panel {
+	margin-top: 4px;
+}
+#toh-adv-head {
+	position: sticky;
+	top: var(--appbar-h);
+	z-index: 2;
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 16px 18px;
+	border-bottom: 1px solid var(--border);
+	background: var(--surface);
+	border-radius: var(--r-lg) var(--r-lg) 0 0;
+}
+#toh-adv-head H2 {
+	font-size: 18px;
+}
+#toh-adv-sub {
+	margin-top: 2px;
+	color: var(--text-muted);
+	font-size: 14px;
+}
+#toh-adv-sub B {
+	color: var(--text);
+	font-size: 16px;
+	font-weight: 650;
+	font-variant-numeric: tabular-nums;
+}
+#toh-adv-actions {
+	display: flex;
+	gap: 8px;
+}
+
+#toh-adv-body {
+	padding: 20px 18px 24px;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+	gap: 24px 28px;
+	align-items: start;
+}
+
+.toh-adv-group H3 {
+	margin-bottom: 8px;
+	color: var(--text-faint);
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+
+.toh-adv-items {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.toh-adv-item {
+	display: flex;
+	align-items: center;
+	gap: 9px;
+	padding: 6px 9px;
+	border-radius: var(--r-sm);
+	font-size: 13px;
+	cursor: pointer;
+	transition: background var(--t);
+}
+.toh-adv-item:hover {
+	background: var(--hover);
+}
+.toh-adv-item INPUT {
+	flex: none;
+	width: 15px;
+	height: 15px;
+	margin: 0;
+	accent-color: var(--primary);
+	cursor: pointer;
+}
+.toh-adv-item-label {
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.toh-adv-item-count {
+	flex: none;
+	color: var(--text-faint);
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+}
+.toh-adv-item:has(INPUT:checked) {
+	background: var(--primary-soft);
+	color: var(--primary);
+	font-weight: 600;
+}
+.toh-adv-item:has(INPUT:checked) .toh-adv-item-count {
+	color: var(--primary);
+}
+/* a criterion that would leave nothing, given the rest of the form */
+.toh-adv-item.is-dead .toh-adv-item-label,
+.toh-adv-item.is-dead .toh-adv-item-count {
+	opacity: 0.4;
+}
+
+.toh-adv-nums {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+.toh-adv-num {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	font-size: 13px;
+	color: var(--text-muted);
+}
+.toh-adv-select {
+	height: 32px;
+	padding: 0 8px;
+	border: 1px solid var(--border);
+	border-radius: var(--r-sm);
+	background: var(--surface);
+	color: var(--text);
+	font-size: 13px;
+	cursor: pointer;
+}
+.toh-adv-select:focus {
+	border-color: var(--primary);
+	box-shadow: 0 0 0 3px var(--primary-ring);
+	outline: none;
+}
+
+/* the search box and the advanced-search button share a row */
+.toh-hero-searchrow {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+.toh-hero-searchrow .toh-herosearch {
+	flex: 1 1 420px;
+}
+#toh-adv-open,
+#toh-wiz-open {
+	flex: none;
+	height: 52px;
+	margin-top: 24px;
+}
+
+@media screen and (max-width: 760px) {
+	#toh-adv-open,
+	#toh-wiz-open {
+		height: 44px;
+		margin-top: 10px;
+	}
+	#toh-adv-head {
+		flex-wrap: wrap;
+	}
+}
+
+
+/* #####################################################################################################
+##### Manufacturer / chipset pages #####################################################################
+######################################################################################################## */
+
+#toh-facet-panel {
+	margin-top: 4px;
+}
+#toh-facet-head {
+	display: flex;
+	justify-content: flex-end;
+	padding: 14px 18px 0;
+}
+#toh-facet-body {
+	padding: 4px 18px 24px;
+}
+
+.toh-facet-kind {
+	color: var(--text-faint);
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+.toh-facet-title H2 {
+	margin-top: 2px;
+	font-size: 26px;
+	letter-spacing: -0.02em;
+}
+.toh-facet-count {
+	margin-top: 4px;
+	color: var(--text-muted);
+	font-size: 14px;
+}
+.toh-facet-count B {
+	color: var(--text);
+	font-weight: 650;
+}
+
+/* the few things we can state about the group itself */
+.toh-facet-facts {
+	margin-top: 20px;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	gap: 10px;
+	max-width: 760px;
+}
+.toh-fact {
+	padding: 12px 14px;
+	border: 1px solid var(--border);
+	border-radius: var(--r);
+	background: var(--surface-sunken);
+}
+.toh-fact-label {
+	display: block;
+	color: var(--text-muted);
+	font-size: 12px;
+}
+.toh-fact-value {
+	display: block;
+	margin-top: 3px;
+	color: var(--text);
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.toh-facet-block {
+	margin-top: 28px;
+}
+.toh-facet-block H3 {
+	margin-bottom: 10px;
+	color: var(--text-muted);
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+
+/* Support breakdown -------------------------------------------------------- */
+
+.toh-supportbar {
+	display: flex;
+	height: 12px;
+	max-width: 760px;
+	border-radius: 999px;
+	overflow: hidden;
+	background: var(--border);
+}
+.toh-supportbar-part.is-supported	{ background: var(--ok); }
+.toh-supportbar-part.is-snapshot	{ background: var(--pending); }
+.toh-supportbar-part.is-eol			{ background: var(--dead); }
+.toh-supportbar-part.is-unknown		{ background: var(--border-strong); }
+
+.toh-supportbar-legend {
+	margin-top: 10px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 20px;
+	font-size: 13px;
+	color: var(--text-muted);
+}
+.toh-legend {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+}
+.toh-legend B {
+	color: var(--text);
+}
+.toh-legend I {
+	width: 9px;
+	height: 9px;
+	border-radius: 50%;
+}
+.toh-legend.is-supported I	{ background: var(--ok); }
+.toh-legend.is-snapshot I	{ background: var(--pending); }
+.toh-legend.is-eol I		{ background: var(--dead); }
+.toh-legend.is-unknown I	{ background: var(--border-strong); }
+
+/* Related chips ------------------------------------------------------------ */
+
+.toh-facet-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+.toh-facet-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	padding: 4px 6px 4px 11px;
+	border: 1px solid var(--border);
+	border-radius: 999px;
+	background: var(--surface);
+	color: var(--text);
+	font-size: 13px;
+}
+A.toh-facet-chip:hover {
+	border-color: var(--primary);
+	background: var(--primary-soft);
+	color: var(--primary);
+}
+.toh-facet-chip B {
+	padding: 0 7px;
+	border-radius: 999px;
+	background: var(--surface-sunken);
+	color: var(--text-muted);
+	font-size: 11px;
+	font-weight: 600;
+}
+
+/* Device list -------------------------------------------------------------- */
+
+TABLE.toh-facet-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+.toh-facet-table TH {
+	padding: 8px 12px;
+	border-bottom: 1px solid var(--border);
+	color: var(--text-muted);
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	text-align: left;
+}
+.toh-facet-table TD {
+	padding: 9px 12px;
+	border-bottom: 1px solid var(--border-soft);
+	vertical-align: middle;
+}
+.toh-facet-table TBODY TR:hover TD {
+	background: var(--hover);
+}
+.toh-facet-model {
+	font-weight: 500;
+}
+.toh-facet-go A {
+	display: inline-flex;
+	color: var(--text-faint);
+}
+.toh-facet-go A:hover {
+	color: var(--primary);
+}
+
+/* the list is capped until asked for in full */
+.toh-facet-more-row {
+	display: none;
+}
+#toh-facet-panel.show-all-devices .toh-facet-more-row {
+	display: table-row;
+}
+A.toh-facet-showall {
+	display: inline-block;
+	margin-top: 12px;
+	color: var(--primary);
+	font-size: 13px;
+	font-weight: 500;
+}
+
+/* the facts under the device name in the details popup */
+.toh-details-headings {
+	min-width: 0;
+}
+.toh-details-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 7px;
+}
+.toh-details-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 2px 9px;
+	border-radius: 999px;
+	background: var(--surface-sunken);
+	color: var(--text);
+	font-size: 12px;
+	font-weight: 500;
+	white-space: nowrap;
+}
+A.toh-details-chip:hover {
+	background: var(--primary-soft);
+	color: var(--primary);
+}
+.toh-details-chip .toh-ico {
+	width: 13px;
+	height: 13px;
+	color: var(--text-faint);
+}
+A.toh-details-chip:hover .toh-ico {
+	color: var(--primary);
+}
+.toh-details-chip-key {
+	padding-right: 7px;
+	border-right: 1px solid var(--border-strong);
+	color: var(--text-faint);
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+/* CPU cells open the chipset page */
+#toh-table .tabulator-cell[tabulator-field=cpu] {
+	cursor: pointer;
+}
+#toh-table .tabulator-cell[tabulator-field=cpu]:hover {
+	color: var(--primary);
+	text-decoration: underline;
+}
+
+
+/* #####################################################################################################
+##### Tips / changelog / footer ########################################################################
+######################################################################################################## */
+
+#toh-info {
+	margin-top: 24px;
+}
+
+#toh-info .toh-card {
+	padding: 16px 20px;
+	margin-bottom: 16px;
+	font-size: 13px;
+}
+
+#toh-info H4 {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	margin-bottom: 10px;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--text-muted);
+}
+#toh-info H4 .toh-ico {
+	width: 15px;
+	height: 15px;
+	color: var(--text-faint);
+}
+#toh-info H4 A {
+	display: inline-flex;
+	color: var(--text-faint);
+}
+#toh-info H4 A:hover {
+	color: var(--primary);
+}
+
+#toh-tips UL,
+#toh-changelog-latest UL,
+#toh-changelog-previous {
+	column-count: 3;
+	column-gap: 32px;
+	padding-left: 18px;
+}
+@media screen and (max-width: 1600px) {
+	#toh-tips UL,
+	#toh-changelog-latest UL,
+	#toh-changelog-previous { column-count: 2; }
+}
+@media screen and (max-width: 900px) {
+	#toh-tips UL,
+	#toh-changelog-latest UL,
+	#toh-changelog-previous { column-count: 1; }
+}
+
+#toh-tips LI {
+	color: var(--text-muted);
+	line-height: 1.6;
+	margin-bottom: 2px;
+}
+
+#toh-changelog {
+	background: var(--pending-bg);
+	border-color: transparent;
+	box-shadow: inset 3px 0 0 var(--pending);
+}
+#toh-changelog HR {
+	border-color: var(--pending);
+	opacity: 0.3;
+}
+#toh-changelog H5 {
+	margin-bottom: 3px;
+	color: var(--warn);
+	font-size: 13px;
+}
+/* release notes are pasted markdown: long URLs would otherwise run out of the card */
+#toh-changelog,
+#toh-tips {
+	overflow-wrap: anywhere;
+	word-break: break-word;
+}
+#toh-changelog A {
+	overflow-wrap: anywhere;
+}
+#toh-changelog H5 .badge {
+	margin-left: 8px;
+}
+#toh-changelog UL {
+	padding-left: 20px;
+	color: var(--text-muted);
+}
+#toh-changelog-latest {
+	margin-bottom: 16px;
+}
+.toh-changelog-release {
+	break-inside: avoid-column;
+	margin-bottom: 14px;
+}
+#toh-changelog-desc {
+	float: right;
+	color: var(--danger);
+	font-size: 11px;
+}
+
+/* A real band across the page, so the document has a visible bottom edge
+   rather than trailing off after the last card. */
+#toh-footer {
+	margin-top: 32px;
+	margin-bottom: 0;
+	border-top: 1px solid var(--border);
+	background: var(--surface);
+	color: var(--text-muted);
+	font-size: 13px;
+	text-align: center;
+}
+.toh-footer-inner {
+	max-width: var(--shell-max);
+	margin: 0 auto;
+	padding: 24px var(--gutter);
+}
+#toh-footer A {
+	color: var(--text-muted);
+	font-weight: 500;
+}
+#toh-footer A:hover {
+	color: var(--primary);
+}
+#toh-footer .toh-ico {
+	width: 12px;
+	height: 12px;
+}
+
+
+/* #####################################################################################################
+##### Responsive #######################################################################################
+######################################################################################################## */
+
+/* On a short window the hero would push the table off the screen, so it gives
+   up its breathing room first. */
+@media screen and (max-height: 820px) {
+	#toh-hero {
+		padding-top: 18px;
+	}
+	#toh-hero H1 {
+		font-size: 24px;
+	}
+	#toh-lede {
+		display: none;
+	}
+	.toh-herosearch {
+		height: 44px;
+		margin-top: 14px;
+	}
+	#toh-stats {
+		margin-top: 16px;
+	}
+	.toh-stat-value {
+		font-size: 22px;
+	}
+}
+
+/* the column picker cannot keep 5 columns forever */
+@media screen and (max-width: 1400px) {
+	#toh-cols-container { width: 700px; }
+	.toh-cols-list-multi { column-count: 4; }
+}
+@media screen and (max-width: 1100px) {
+	#toh-cols-container { width: 540px; }
+	.toh-cols-list-multi { column-count: 3; }
+}
+
+/* Below this the sidebar becomes an overlay drawer ---------------------------
+   At 1280px it costs the table 272px it cannot spare, and the rail is pinned
+   open whether or not anyone is filtering. Left at 1000px the table got *wider*
+   as the window got narrower - 778px at 1100, 966px at 1000 - because crossing
+   that line handed the sidebar's column back. */
+@media screen and (max-width: 1280px) {
+	#toh-sidebar-toggle {
+		display: flex;
+	}
+
+	#toh-shell {
+		display: block;
+	}
+
+	#toh-sidebar {
+		position: fixed;
+		top: var(--appbar-h);
+		left: 0;
+		z-index: 950;
+		width: var(--sidebar-w);
+		max-width: 88vw;
+		transform: translateX(-100%);
+		transition: transform 0.2s ease;
+		box-shadow: var(--shadow-lg);
+	}
+	BODY.toh-sidebar-open #toh-sidebar {
+		transform: none;
+	}
+
+	BODY.toh-sidebar-open #toh-sidebar-scrim {
+		display: block;
+		position: fixed;
+		inset: var(--appbar-h) 0 0 0;
+		z-index: 940;
+		background: rgba(17, 24, 39, 0.3);
+	}
+}
+
+@media screen and (max-width: 1000px) {
+	:root {
+		--gutter: 16px;
+	}
+
+	#toh-pagehead H1 {
+		font-size: 24px;
+	}
+	#toh-stats {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media screen and (max-width: 760px) {
+	#toh-appbar-title {
+		font-size: 13px;
+	}
+	.toh-appbar-link {
+		display: none;
+	}
+
+	/* the count gets its own line so Sorts / Columns / Export stay on one row
+	   even on a 360px phone */
+	#toh-toolbar {
+		gap: 8px;
+		padding: 10px 12px;
+	}
+	#toh-toolbar-count {
+		flex: 1 0 100%;
+	}
+	#toh-toolbar-actions {
+		flex: 1 1 100%;
+		margin-left: 0;
+		flex-wrap: wrap;
+		gap: 6px;
+	}
+	#toh-toolbar-actions A.toh-but {
+		padding: 0 9px;
+		gap: 5px;
+	}
+
+	#toh-cols-container,
+	.toh-menu-panel {
+		position: fixed;
+		left: var(--gutter);
+		right: var(--gutter);
+		width: auto;
+		max-width: none;
+	}
+	.toh-cols-list-multi {
+		column-count: 2;
+	}
+
+	#toh-lede {
+		font-size: 13px;
+	}
+	.toh-stat {
+		padding: 12px;
+	}
+	.toh-stat-value {
+		font-size: 20px;
+	}
+}
+
+@media screen and (max-width: 560px) {
+	/* the logo already reads "OpenWrt"; the app bar cannot hold both */
+	#toh-appbar-title {
+		display: none;
+	}
+	#toh-hero H1 {
+		font-size: 22px;
+	}
+	.toh-herosearch {
+		height: 46px;
+		padding: 0 12px;
+	}
+	#toh-stats {
+		gap: 12px 28px;
+	}
+	.toh-stat-value {
+		font-size: 24px;
+	}
+}
+
+
+/* #####################################################################################################
+##### Misc #############################################################################################
+######################################################################################################## */
+
+/* Develop-branch marker */
+BODY.branch-dev #toh-appbar {
+	border-bottom-color: #fecaca;
+	box-shadow: inset 0 -3px 0 -1px #fee2e2;
+}
+BODY.branch-dev #toh-dev-badge {
+	display: inline-block;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+::-webkit-scrollbar-thumb {
+	background: var(--border-strong);
+	border-radius: 999px;
+	border: 3px solid var(--bg);
+}
+::-webkit-scrollbar-thumb:hover {
+	background: var(--text-faint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+}
+
+
+/* #####################################################################################################
+##### Configurator #####################################################################################
+######################################################################################################## */
+
+#toh-wiz-panel {
+	margin-top: 4px;
+}
+#toh-wiz-head {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 16px 18px;
+	border-bottom: 1px solid var(--border);
+}
+#toh-wiz-head H2 {
+	font-size: 18px;
+}
+#toh-wiz-sub {
+	margin-top: 2px;
+	color: var(--text-muted);
+	font-size: 14px;
+}
+#toh-wiz-sub B {
+	color: var(--text);
+	font-weight: 650;
+	font-variant-numeric: tabular-nums;
+}
+#toh-wiz-actions {
+	display: flex;
+	gap: 8px;
+}
+#toh-wiz-back:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+#toh-wiz-body {
+	padding: 24px 18px 32px;
+	max-width: 620px;
+}
+
+.toh-wiz-progress {
+	display: flex;
+	gap: 6px;
+	margin-bottom: 22px;
+}
+.toh-wiz-dot {
+	width: 26px;
+	height: 4px;
+	border-radius: 999px;
+	background: var(--border);
+}
+.toh-wiz-dot.is-done {
+	background: var(--primary-soft);
+	box-shadow: inset 0 0 0 1px var(--primary);
+}
+.toh-wiz-dot.is-now {
+	background: var(--primary);
+}
+
+.toh-wiz-step H3 {
+	font-size: 20px;
+	letter-spacing: -0.015em;
+}
+.toh-wiz-hint {
+	margin-top: 4px;
+	color: var(--text-muted);
+	font-size: 13px;
+}
+
+.toh-wiz-options {
+	margin-top: 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+A.toh-wiz-option {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 12px 14px;
+	border: 1px solid var(--border);
+	border-radius: var(--r);
+	background: var(--surface);
+	color: var(--text);
+	font-size: 14px;
+	/* named, not "all": "all" makes the browser check every animatable
+	   property on each style change, layout ones included */
+	transition: background-color var(--t), border-color var(--t), color var(--t), opacity var(--t), box-shadow var(--t);
+}
+A.toh-wiz-option:hover {
+	border-color: var(--border-strong);
+	background: var(--hover);
+	color: var(--text);
+}
+A.toh-wiz-option.is-on {
+	border-color: var(--primary);
+	background: var(--primary-soft);
+	color: var(--primary);
+	font-weight: 600;
+}
+.toh-wiz-option-count {
+	flex: none;
+	color: var(--text-faint);
+	font-size: 13px;
+	font-variant-numeric: tabular-nums;
+}
+A.toh-wiz-option.is-on .toh-wiz-option-count {
+	color: var(--primary);
+}
+/* an answer that would leave nothing */
+A.toh-wiz-option.is-dead {
+	opacity: 0.45;
+}
+
+
+/* #####################################################################################################
+##### Statistics #######################################################################################
+######################################################################################################## */
+
+.toh-stats-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+	gap: 4px 32px;
+}
+
+.toh-statbars {
+	display: flex;
+	flex-direction: column;
+	gap: 7px;
+}
+.toh-statbar {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 120px auto;
+	align-items: center;
+	gap: 12px;
+	font-size: 13px;
+}
+.toh-statbar-label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: var(--text);
+}
+.toh-statbar-track {
+	height: 8px;
+	border-radius: 999px;
+	background: var(--surface-sunken);
+	overflow: hidden;
+}
+.toh-statbar-fill {
+	display: block;
+	height: 100%;
+	border-radius: 999px;
+	background: var(--primary);
+}
+.toh-statbar-value {
+	color: var(--text-muted);
+	font-variant-numeric: tabular-nums;
+}
+
+
+/* Similar devices ---------------------------------------------------------- */
+
+.toh-details-key.toh-similar-score {
+	width: 54px;
+	color: var(--primary);
+	font-weight: 650;
+	font-variant-numeric: tabular-nums;
+	text-align: right;
+}
+.toh-similar-name A {
+	display: block;
+	font-weight: 500;
+}
+.toh-similar-shared {
+	display: block;
+	margin-top: 1px;
+	color: var(--text-faint);
+	font-size: 11px;
+}
+
+
+/* #####################################################################################################
+##### Favourites #######################################################################################
+######################################################################################################## */
+
+#toh-favorites {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	margin-left: auto;
+}
+A#toh-fav-pin {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 8px;
+	border-radius: 999px;
+	color: var(--text-faint);
+	font-size: 11px;
+	font-weight: 600;
+}
+A#toh-fav-pin:hover {
+	background: var(--hover);
+	color: var(--text-muted);
+}
+#toh-favorites.has-any A#toh-fav-pin {
+	color: var(--text-muted);
+}
+/* pinned: favourites ride along with every filter */
+A#toh-fav-pin.is-on,
+A#toh-fav-pin.is-on:hover {
+	background: #fee2e2;
+	color: #e11d48;
+}
+:root[data-theme="dark"] A#toh-fav-pin.is-on,
+:root[data-theme="dark"] A#toh-fav-pin.is-on:hover {
+	background: #3a1620;
+	color: #fb7185;
+}
+A#toh-fav-pin.is-on .toh-ico {
+	fill: currentColor;
+}
+A#toh-fav-pin .toh-ico {
+	width: 12px;
+	height: 12px;
+}
+
+A#toh-fav-clear {
+	display: inline-flex;
+	color: var(--text-faint);
+}
+A#toh-fav-clear:hover {
+	color: var(--danger);
+}
+A#toh-fav-clear .toh-ico {
+	width: 11px;
+	height: 11px;
+}
+
+/* the heart in the table */
+#toh-table A.toh-fav-toggle {
+	display: inline-flex;
+	color: var(--border-strong);
+	transition: color var(--t);
+}
+#toh-table A.toh-fav-toggle:hover {
+	color: #fb7185;
+}
+#toh-table A.toh-fav-toggle.is-on {
+	color: #e11d48;
+}
+#toh-table A.toh-fav-toggle.is-on .toh-ico {
+	fill: currentColor;
+}
+#toh-table A.toh-fav-toggle .toh-ico {
+	width: 14px;
+	height: 14px;
+}
+
+/* the pinned group header Tabulator draws */
+#toh-table .tabulator-row.tabulator-group {
+	background: var(--surface-sunken);
+	border-bottom: 1px solid var(--border);
+	color: var(--text-muted);
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	padding: 6px 10px;
+}
+
+
+/* Hints ---------------------------------------------------------------------
+	In the flow, not floating: the sidebar scrolls, and anything positioned
+	absolutely inside it was clipped by that scroll container - the hint drew
+	underneath the page instead of over it.
+*/
+.toh-hint {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	margin: 8px 0 2px;
+	padding: 9px 11px;
+	border: 0;
+	border-left: 3px solid var(--primary);
+	border-radius: 0 var(--r-sm) var(--r-sm) 0;
+	background: var(--primary-soft);
+	color: var(--text-muted);
+	font-size: 12px;
+	font-weight: 400;
+	line-height: 1.45;
+	text-transform: none;
+	letter-spacing: 0;
+}
+.toh-hint .toh-ico {
+	flex: none;
+	width: 14px;
+	height: 14px;
+	margin-top: 1px;
+	color: var(--primary);
+}
+.toh-hint B {
+	color: var(--text);
+	font-weight: 600;
+}
+.toh-upresets-help.is-open {
+	color: var(--primary);
+}
+
+
+/* #####################################################################################################
+##### Collections ######################################################################################
+######################################################################################################## */
+
+#toh-collections {
+	margin: 0 0 24px;
+}
+/* the shortlist is part of the browse view; a full-screen comparison hides it */
+BODY.toh-compare-open #toh-collections {
+	display: none;
+}
+
+/* "Edit on the wiki" in a device's details */
+A.toh-details-edit {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	margin-top: 8px;
+	color: var(--text-muted);
+	font-size: 12px;
+	font-weight: 500;
+}
+A.toh-details-edit:hover {
+	color: var(--primary);
+}
+A.toh-details-edit .toh-ico {
+	width: 13px;
+	height: 13px;
+}
+#toh-collections H2 {
+	margin-bottom: 12px;
+	color: var(--text-muted);
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+#toh-collections-list {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+	gap: 10px;
+}
+A.toh-collection {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 12px 14px;
+	border: 1px solid var(--border);
+	border-radius: var(--r);
+	background: var(--surface);
+	color: var(--text);
+	/* named, not "all": "all" makes the browser check every animatable
+	   property on each style change, layout ones included */
+	transition: background-color var(--t), border-color var(--t), color var(--t), opacity var(--t), box-shadow var(--t);
+}
+A.toh-collection:hover {
+	border-color: var(--primary);
+	background: var(--primary-soft);
+	color: var(--primary);
+}
+.toh-collection-title {
+	font-size: 14px;
+	font-weight: 600;
+}
+.toh-collection-hint {
+	color: var(--text-muted);
+	font-size: 12px;
+}
+A.toh-collection:hover .toh-collection-hint {
+	color: var(--primary);
+	opacity: 0.85;
+}
+.toh-collection-count {
+	margin-top: 4px;
+	color: var(--text-faint);
+	font-size: 11px;
+	font-variant-numeric: tabular-nums;
+}
+
+
+/* #####################################################################################################
+##### Accessibility ####################################################################################
+######################################################################################################## */
+
+/* Reachable by keyboard, out of the way otherwise */
+.toh-skip {
+	position: absolute;
+	left: -9999px;
+	top: 0;
+	z-index: 2000;
+	padding: 10px 16px;
+	border-radius: 0 0 var(--r) 0;
+	background: var(--primary);
+	color: #fff;
+	font-size: 14px;
+	font-weight: 600;
+}
+.toh-skip:focus {
+	left: 0;
+	color: #fff;
+}
+
+/* The focus ring has to survive on the tinted and dark surfaces too */
+:focus-visible {
+	outline: 2px solid var(--primary);
+	outline-offset: 2px;
+}
+A.toh-but:focus-visible,
+BUTTON.toh-but:focus-visible,
+.toh-filter-title A:focus-visible,
+A.toh-collection:focus-visible,
+A.toh-wiz-option:focus-visible,
+#toh-cols-presets A:focus-visible,
+.toh-upresets-content A:focus-visible {
+	outline: 2px solid var(--primary);
+	outline-offset: 2px;
+}
+
+/* Anything that only reads as colour needs a second cue for a colourblind
+   reader. The badges already carry a dot; give the row-level marks a shape. */
+@media (forced-colors: active) {
+	.toh-filter-feature.is-on .toh-filter-title A,
+	.toh-adv-item:has(INPUT:checked),
+	A.toh-wiz-option.is-on {
+		outline: 2px solid;
+	}
+	.toh-compare-table TR.is-diff TD {
+		outline: 1px dotted;
+	}
+}
+
+
+/* #####################################################################################################
+##### Image lightbox ###################################################################################
+######################################################################################################## */
 
 #toh-image-lightbox {
 	position: fixed;
@@ -1167,8 +4284,8 @@ A.toh-but:hover{
 	max-height: 100%;
 	/* deeper than the details popup's: this one floats over a dimmed page */
 	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-	background-color: var(--toh-surface);
-	border-radius: var(--toh-radius-lg);
+	background-color: var(--surface);
+	border-radius: var(--r-lg);
 	/* keeps the head's corners with the box's, no white rim around the title */
 	overflow: hidden;
 }
@@ -1211,21 +4328,25 @@ A.toh-but:hover{
 	flex: 0 0 auto;
 	border: 0;
 	background: transparent;
-	color: var(--toh-text-secondary);
+	color: var(--text-muted);
 	font-size: 20px;
 	padding: 10px 14px;
 	cursor: pointer;
 	align-self: stretch;
-	transition: all var(--toh-transition);
+	/* named, not "all": "all" makes the browser check every animatable
+	   property on each style change, layout ones included */
+	transition: background-color var(--t), border-color var(--t), color var(--t), opacity var(--t), box-shadow var(--t);
 }
 #toh-image-lightbox .toh-lightbox-nav:hover{
-	color: var(--toh-primary);
+	color: var(--primary);
 	background-color: rgba(0, 153, 217, 0.08);
 }
 #toh-image-lightbox .toh-lightbox-close{
 	line-height: 100%;
 	opacity: 0.7;
-	transition: all var(--toh-transition);
+	/* named, not "all": "all" makes the browser check every animatable
+	   property on each style change, layout ones included */
+	transition: background-color var(--t), border-color var(--t), color var(--t), opacity var(--t), box-shadow var(--t);
 	padding: 4px;
 	border-radius: 4px;
 }
@@ -1243,7 +4364,7 @@ A.toh-but:hover{
 	min-height: 120px;
 	/* no padding: the white rim it used to leave around the picture was the
 	   card's own background showing through */
-	color: var(--toh-text-secondary);
+	color: var(--text-muted);
 }
 #toh-image-lightbox .toh-lightbox-content img{
 	display: block;
@@ -1255,548 +4376,413 @@ A.toh-but:hover{
 #toh-image-lightbox .toh-lightbox-error{
 	padding: 20px;
 	font-size: 14px;
-	color: var(--toh-danger);
+	color: var(--dead);
 	text-align: center;
 }
 #toh-image-lightbox .toh-lightbox-error A{
 	display: inline-block;
 	margin-top: 10px;
-	color: var(--toh-primary);
+	color: var(--primary);
 }
 
 
-
-/* Table ---------------------------------------------------- */
-
-#toh-table{
-	border: 0;
-}
-
-#toh-table-container{
-	border-top: 1px solid var(--toh-border);
-	/* only the height used until the table is built: from then on setTableHeight()
-	   measures the real header, footer and scrollbar and corrects this */
-	height: 898px;
-}
-
-#toh-table.tabulator {
-	font-size: 13px;
-	overflow-anchor: none;
-	background-color: transparent;
-}
-
-#toh-table.tabulator .tabulator-tableholder {
-	background-color: #fafbfc;
-	overflow-x: scroll;
-	overflow-y: hidden;
-}
-
-#toh-table .tabulator-table{
-	/* border-bottom: #ccc 1px solid; */
-}
-/* .tabulator-row .tabulator-cell:not([style*="display: none"]):last-of-type {
-	border-right: none;
-	background: red;
-} */
-
-
-
-/* Table column headers ------------------------------------- */
-
-#toh-table .tabulator-header{
-	background-color: #f8fafc;
-}
-#toh-table .tabulator-header .tabulator-col{
-	background: linear-gradient(to bottom, #f1f5f9 0%, #e2e8f0 100%);
-	/* narrow columns are hard to tell apart on the filter row, so the separator
-	   has to be about as visible as the one between the cells underneath */
-	border-right: 1px solid var(--toh-border-strong);
-	font-weight: 600;
-	color: var(--toh-text);
-	transition: background var(--toh-transition);
-}
-#toh-table .tabulator-header .tabulator-col:hover{
-	background: linear-gradient(to bottom, #e2e8f0 0%, #cbd5e1 100%);
-}
-
-
-
-/* Header filter -------------------------------------------- */
-
-#toh-table .tabulator-header .tabulator-col .tabulator-col-content .tabulator-col-title {	
-	text-overflow: clip;
-	font-size: 12px;
-	font-weight: 600;
-}
-#toh-table .tabulator-header-filter {
-	padding-right: 15px;
-	margin-top: 6px;
-}
-#toh-table .tabulator-header-filter INPUT {
-	font-size: 12px;
-	line-height: 1.4;
-	padding: 4px 8px !important;
-	border: 1px solid var(--toh-border);
-	border-radius: 6px;
-	background: var(--toh-surface);
-	transition: all var(--toh-transition);
-}
-#toh-table .tabulator-header .tabulator-col-sorter {
-	display: block;
-	position: absolute;
-	top: 30px;
-	right: 0;
-	z-index: 10;
-}
-
-#toh-table .tabulator-header-filter INPUT:focus {
-	left: 0;
-	z-index: 9999;
-	background: #eff6ff;
-	border-color: var(--toh-primary);
-	box-shadow: 0 0 0 3px rgba(0, 153, 217, 0.15);
-	outline: none;
-}
-
-
-
-/* Footer --------------------------------------------------- */
-#toh-table.tabulator .tabulator-footer{
-	margin-top: -1px;
-	position: relative;	
-	border-top: 1px solid var(--toh-border);
-	background: linear-gradient(to bottom, #f8fafc 0%, #f1f5f9 100%);
-	border-radius: 0 0 var(--toh-radius-lg) var(--toh-radius-lg);
-}
-
-#toh-table .tabulator-footer .tabulator-page-counter{
-	color: var(--toh-text-secondary);
-}
-#toh-table .tabulator-footer .tabulator-paginator LABEL{
-	font-weight: 500;
-	color: var(--toh-text-secondary);
-}
-#toh-table .tabulator-footer .tabulator-page-size{
-	margin-right: 15px;
-	border: 1px solid var(--toh-border);
-	border-radius: 6px;
-	padding: 4px 8px;
-	background: var(--toh-surface);
-}
-@media screen and (max-width: 760px) {
-	#toh-table .tabulator-footer .tabulator-page-size{
-		margin-right: 5px;
-	}
-	#toh-table .tabulator-footer .tabulator-page-counter{
-		font-size: 11px;
-	}
-}
-
-#toh-table button.tabulator-page{
-	border: 1px solid var(--toh-border);
-	border-radius: 6px;
-	margin: 0 2px;
-	padding: 4px 10px;
-	background: var(--toh-surface);
-	transition: all var(--toh-transition);
-}
-#toh-table button.tabulator-page:hover{
-	background: var(--toh-primary);
-	color: #fff;
-	border-color: var(--toh-primary);
-}
-#toh-table button.tabulator-page.active{
-	color: #fff;
-	background: var(--toh-primary);
-	border-color: var(--toh-primary);
-	font-weight: 600;
-}
-
-
-
-.toh-table-loading {
-	position: relative;
-	margin-right: 10px;
-	vertical-align: middle;
-	color: #000;
-	font-size: 14px;
-}
-
-
-
-/* VIRT_edit column  ---------------------------------------- */
-
-.tabulator-col[tabulator-field="VIRT_edit"] .tabulator-col-title{
-	display: none;
-}
-
-
-
-/* Cells --------------------------------------- */
-#toh-table .fa-warning.dlerror{
-}
-
-
-#toh-table .tabulator-cell .tlink,
-#toh-table .tabulator-cell .cell-image{
-	font-size: 14px;
-}
-#toh-table .tabulator-cell A.cell-image{
-	text-decoration: none;
-}
-
-.toh-spacer{
-	display: inline-block;
-	height: 1px;
-}
-
-#toh-table .tabulator-cell .toh-spacer{
-	width: 1px;
-}
-
-#toh-table .tabulator-cell A.tlink{
-	display: block;
-	height: 100%;
-}
-#toh-table .tabulator-cell A.tlink.supportedsincecommit{
-	display: inline;
-}
-
-A.tlink I{
-	margin-right: 1px;
-}
-
-
-A.tlink.firmwareopenwrtinstallurl,
-A.tlink.firmwareopenwrtsnapshotinstallurl{
-	color: rgb(217, 0, 0);
-}
-
-A.tlink.firmwareopenwrtupgradeurl,
-A.tlink.firmwareopenwrtsnapshotupgradeurl{
-	color: rgb(0, 154, 0);
-}
-
-A.tlink.firmwareoemstockurl{
-	color: rgb(243, 0, 223);
-}
-
-A.tlink.VIRT_firm{
-	color:rgb(0, 163, 225);
-}
-A.tlink.VIRT_firm I.dlerror{
-	color: orange;
-	opacity: 0.4;
-}
-
-#toh-table A.tlink:hover I{
-	color: #000;
-	text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-	opacity: 1;
-}
-#toh-table A.tlink.VIRT_firm:hover I.dlerror{
-	color: red;
-}
-
-#toh-table .tabulator-cell[tabulator-field=VIRT_edit] A{
-	opacity: 0.6;
-}
-#toh-table .tabulator-cell[tabulator-field=VIRT_edit] A:hover{
-	opacity: 1;
-}
-
-
-
-/* Hover and Active Rows ----------------------------------------- */  
-#toh-table .tabulator-row.popup-active{
-	background: linear-gradient(135deg, #334155 0%, #475569 100%);
-}
-#toh-table .tabulator-row.popup-active,
-.tabulator-row.popup-active A{
-	color: #fff;
-}
-
-/* row hover ---- */
-#toh-table .tabulator-row:hover {
-	background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-	transition: background 0.15s ease;
-}
-#toh-table .tabulator-row:hover,
-#toh-table .tabulator-row:hover A{
-	color: var(--toh-text);
-}
-#toh-table .tabulator-row.popup-active:hover {
-	background: linear-gradient(135deg, #475569 0%, #64748b 100%);
-}
-#toh-table .tabulator-row.popup-active:hover,
-#toh-table .tabulator-row.popup-active:hover A{
-	color: #fff;
-}
-/* the marks carry their own colour, so the dark active row needs lighter ones */
-#toh-table .tabulator-row.popup-active .toh-mark-yes{
-	color: #86efac;
-}
-#toh-table .tabulator-row.popup-active .toh-mark-no{
-	color: #fca5a5;
-}
-#toh-table .tabulator-row.popup-active .toh-mark-unknown{
-	color: rgba(255, 255, 255, 0.45);
-	opacity: 1;
-}
-#toh-table .tabulator-row.popup-active .toh-mark-unknown.unknown{
-	color: #fcd34d;
-}
-
-
-/* Cell Details Popup ----------------------------------------- */  
-
-.toh-details-container{
-	border: 0;
-	padding: 0;
-	background-color: transparent;
-	box-shadow: none;
-	height: auto !important;
-	overflow: auto;
-}
-.toh-details-border{
-	border: 1px solid var(--toh-border);
-	box-shadow: var(--toh-shadow-lg);
-	margin: 8px 16px 16px 8px;
-	border-radius: var(--toh-radius-lg);
-	overflow: hidden;
-}
-.toh-details-head{
+/* Status notices in the details popup ---------------------------------------
+	The support state is the first thing most people came to find out, so it is
+	said in words at the top rather than left as one row among forty.
+*/
+.toh-details-notices {
 	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-	color: #fff;
-	background: linear-gradient(135deg, #334155 0%, #475569 100%);
-	font-size: 14px;
-	line-height: 1.5;
-	padding: 10px 16px;
+	flex-direction: column;
+	gap: 8px;
+	padding: 14px 16px;
+	border-bottom: 1px solid var(--border);
+	background: var(--surface);
 }
-.toh-details-close{
-	line-height: 100%;
-	opacity: 0.7;
-	transition: all var(--toh-transition);
-	padding: 4px;
-	border-radius: 4px;
-}
-.toh-details-close:hover{
-	cursor: pointer;
-	opacity: 1;
-	background: rgba(255, 255, 255, 0.1);
-}
-.toh-details-title{
-	line-height: 100%;
+.toh-notice {
+	display: flex;
+	align-items: flex-start;
+	gap: 9px;
+	padding: 10px 12px;
+	border-radius: var(--r-sm);
 	font-size: 13px;
+	line-height: 1.45;
 }
-.toh-details-bottom{
-	height: 5px;
+.toh-notice .toh-ico {
+	flex: none;
+	width: 16px;
+	height: 16px;
+	margin-top: 1px;
 }
-.toh-details-content{
-	column-count: 4;
-	column-gap: 16px;
-	padding: 16px;
-	background-color: #f8fafc;
+.toh-notice B {
+	font-weight: 650;
+}
+.toh-notice.is-dead {
+	background: var(--dead-bg);
+	color: var(--dead);
+	box-shadow: inset 3px 0 0 var(--dead);
+}
+.toh-notice.is-pending {
+	background: var(--pending-bg);
+	color: var(--pending);
+	box-shadow: inset 3px 0 0 var(--pending);
+}
+.toh-notice.is-quiet {
+	background: var(--surface-sunken);
+	color: var(--text-muted);
+	box-shadow: inset 3px 0 0 var(--border-strong);
 }
 
-@media screen and (max-width: 1600px) {
-	.toh-details-content {
-		column-count: 3;
+
+/* Statistics bars that lead somewhere ---------------------------------------- */
+A.toh-statbar {
+	color: var(--text);
+	border-radius: var(--r-sm);
+	margin: 0 -6px;
+	padding: 2px 6px;
+	transition: background var(--t);
+}
+A.toh-statbar:hover {
+	background: var(--hover);
+	color: var(--primary);
+}
+A.toh-statbar:hover .toh-statbar-value {
+	color: var(--primary);
+}
+
+/* the headline cards on the statistics page sit inside a panel, not the hero */
+.toh-stats-inline {
+	margin: 20px 0 0;
+	max-width: none;
+}
+
+/* the shortlist currently in force; click it again to clear it */
+A.toh-collection.is-on {
+	border-color: var(--primary);
+	background: var(--primary-soft);
+	color: var(--primary);
+	box-shadow: inset 3px 0 0 var(--primary);
+}
+A.toh-collection.is-on .toh-collection-hint,
+A.toh-collection.is-on .toh-collection-count {
+	color: var(--primary);
+	opacity: 0.85;
+}
+
+
+/* Getting to the first device on a phone --------------------------------------
+   Stacked, the four statistics and the nine shortlists put the first card
+   1,590px down: nearly two screens of scrolling past things nobody asked for.
+   Both become a single row - still there, still tappable - and the list starts
+   about a screen higher.
+
+   Last of the responsive blocks on purpose: it has to override the 1000px and
+   560px rules above, which are more specific about nothing but come first. */
+@media screen and (max-width: 700px) {
+	#toh-stats {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 8px;
+		margin-top: 14px;
+	}
+	.toh-stat {
+		flex-direction: column;
+		gap: 0;
+		padding: 8px 4px;
+		text-align: center;
+	}
+	.toh-stat-icon {
+		display: none;				/* four icons in a 360px row is just noise */
+	}
+	.toh-stat-value {
+		font-size: 17px;
+	}
+	.toh-stat-label {
+		font-size: 10px;
+	}
+
+	#toh-collections-list {
+		display: flex;
+		gap: 8px;
+		overflow-x: auto;
+		scroll-snap-type: x mandatory;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		/* bleed to the screen edges, so the strip reads as scrollable */
+		margin: 0 calc(var(--gutter) * -1);
+		padding: 2px var(--gutter);
+	}
+	#toh-collections-list::-webkit-scrollbar {
+		display: none;
+	}
+	A.toh-collection {
+		flex: 0 0 auto;
+		width: 190px;
+		scroll-snap-align: start;
+		padding: 10px 12px;
+	}
+
+	/* Row height belongs to a table, and there is no table down here. Dropping
+	   it also stops the toolbar wrapping onto a third line. */
+	#toh-density {
+		display: none;
+	}
+
+	/* Review feedback (soif, PR #54): on a phone the card chrome is charging
+	   horizontal space for a border nobody needs. A 390px screen was giving the
+	   content 318px of itself. Full-bleed sections, hairline separators instead
+	   of boxes. */
+	/* the bleed goes on the wrapper only - #toh-tips and #toh-changelog live
+	   inside #toh-info, and pulling all three out stacked the offsets and made
+	   the box wider than the screen */
+	#toh-info {
+		margin-left: calc(var(--gutter) * -1);
+		margin-right: calc(var(--gutter) * -1);
+	}
+	#toh-tips,
+	#toh-changelog {
+		border-left: 0;
+		border-right: 0;
+		border-radius: 0;
+		box-shadow: none;
+	}
+
+	/* ... and the filter drawer covers the screen rather than 70% of it */
+	#toh-sidebar {
+		width: 100%;
+		max-width: 100%;
+	}
+	#toh-sidebar-inner {
+		padding: 20px 14px 32px;
 	}
 }
-@media screen and (max-width: 1290px) {
-	.toh-details-content {
-		column-count: 2;
+
+/* Touch targets ---------------------------------------------------------------
+   Review feedback (soif, PR #54): the filter and column rows are sized for a
+   pointer - 32px and 16px tall. Keyed on the input device rather than the
+   width, so a touch tablet gets them too and a small desktop window does not
+   lose the density it was tuned for. */
+@media (pointer: coarse) {
+	.toh-filter-feature .toh-filter-title A {
+		padding: 11px 9px;
+	}
+	.toh-col {
+		padding: 7px 0;
+	}
+	.toh-col INPUT[type=checkbox] {
+		width: 17px;
+		height: 17px;
+	}
+	.toh-cols-presets A,
+	#toh-cols-presets A {
+		padding: 7px 12px;
 	}
 }
-@media screen and (max-width: 960px) {
-	.toh-details-content {
-		column-count: 1;
+
+
+.toh-compare-ver {
+	color: var(--text-faint);
+	font-weight: 400;
+}
+
+
+/* A blocked pick has to look blocked. The table checkbox has had this since the
+   limit existed; the card button was given `disabled` without it, so on a phone
+   - where there is no hover and no cursor to fall back on - it looked identical
+   to a working one. */
+.toh-card-cmp:disabled,
+.toh-card-fav:disabled {
+	opacity: .35;
+	cursor: not-allowed;
+}
+
+
+/* Announced, never drawn - a live region for things that have no room on
+   screen but must not happen in silence. */
+.toh-visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	border: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+
+/* #####################################################################################################
+##### Narrow phones and foldables #######################################################################
+########################################################################################################
+
+	The width tiers above stop at 560px, and the narrowest device this table is
+	actually read on is a 344px Z Fold cover screen. That left a 240px band -
+	wider than the whole gap between a phone and a tablet - with no rules in it.
+
+	Placed last on purpose, so these win on source order: the file already uses
+	that convention deliberately (see the note above the pointer:coarse block).
+*/
+
+/* The bottom of the viewport is a system gesture area on every foldable and on
+   iOS. viewport-fit=cover in index.html is what makes env() resolve to a real
+   number; without the two together the tray sits under the home indicator. */
+.toh-compare-tray-inner {
+	padding-bottom: calc(12px + env(safe-area-inset-bottom));
+}
+#toh-sheet-panel {
+	padding-bottom: env(safe-area-inset-bottom);
+}
+.toh-appbar-inner,
+.toh-summary-inner,
+#toh-content,
+.toh-footer-inner {
+	padding-left: max(var(--gutter), env(safe-area-inset-left));
+	padding-right: max(var(--gutter), env(safe-area-inset-right));
+}
+
+/* 100vh is the URL-bar-retracted viewport, so the last screenful of these
+   panels could not be scrolled to on a phone. dvh tracks the visible one.
+   Deliberately NOT applied to html/body: the details popup is positioned
+   against a body that has to stay exactly viewport height, and animating that
+   as the URL bar moves would make the whole page jump. */
+@supports (height: 100dvh) {
+	#toh-sidebar,
+	#toh-sidebar-inner {
+		max-height: calc(100dvh - var(--appbar-h));
+	}
+	#toh-image-lightbox .toh-lightbox-content img {
+		max-height: calc(100dvh - 80px);
 	}
 }
-.toh-details-group{
-	margin-bottom: 12px;
-	break-inside: avoid;
-}
-.toh-details-title{
-	padding: 0 0 6px 2px;
-	line-height: 100%;
-	color: var(--toh-text-secondary);
-	font-size: 11px;
-	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
-}
-TABLE.toh-details-table{
-	width: 100%;
-	border-spacing: 0;
-	border-collapse: separate;
-	margin-bottom: 12px;
-	box-shadow: var(--toh-shadow-sm);
-	border-radius: var(--toh-radius);
+
+/* The sheet is a modal: the page behind it must not scroll, and a flick that
+   reaches the end of the sheet must not carry on into the card list. */
+BODY.toh-sheet-open {
 	overflow: hidden;
 }
-.toh-details-table TD{
-	font-size: 13px;
-	line-height: 1.5;
+#toh-sheet-panel {
+	overscroll-behavior: contain;
+}
+#toh-sheet-scrim {
+	touch-action: none;
 }
 
-.toh-details-key,
-.toh-details-value{
-	padding: 8px 10px;
+/* A 32px blur on an element parked at translateX(-100%) still paints inside
+   the viewport - a permanent grey smudge down the left edge of every phone
+   page, and an off-screen layer to composite on every frame. */
+@media screen and (max-width: 1280px) {
+	#toh-sidebar {
+		box-shadow: none;
+	}
+	BODY.toh-sidebar-open #toh-sidebar {
+		box-shadow: var(--shadow-lg);
+	}
 }
 
-.toh-details-key{
-	padding-left: 10px;
-	padding-right: 12px;
-	width: 120px;
-	border-top: 1px solid var(--toh-border);
-	border-left: 1px solid var(--toh-border);
-	border-right: 1px solid var(--toh-border);
-	background-color: #f1f5f9;
-	vertical-align: top;
-	text-align: right;
-	font-weight: 500;
-	color: var(--toh-text-secondary);
-}
-.toh-details-key A{
-	color: var(--toh-text-secondary);
-	text-decoration: none;
-	display: block;
-	transition: color var(--toh-transition);
-}
-.toh-details-key A:hover{
-	color: var(--toh-primary);
-	cursor: help;
+/* Between the phone tier and the table tier - the unfolded inner screen of a
+   Z Fold (673px), a Pixel Fold (700px), one Surface Duo pane (540px). The card
+   list stayed one column here, so unfolding the phone bought the reader
+   nothing but white space. */
+@media screen and (min-width: 560px) and (max-width: 700px) {
+	#toh-cards-list {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+		gap: 10px;
+	}
 }
 
-.toh-details-value{
-	padding-left: 12px;
-	padding-right: 10px;
-	border-top: 1px solid var(--toh-border);
-	border-right: 1px solid var(--toh-border);
-	background-color: var(--toh-surface);
-	color: var(--toh-text);
-	word-break: break-all;
-}
-.toh-details-value I{
-	font-size: 14px;
-}
-.toh-details-value .toh-spacer{
-	width: 14px;
-	height: 3px;
-	display: block;
-}
+@media screen and (max-width: 430px) {
+	/* The pager needs 362px for its three fixed-width children and gets
+	   viewport-54. Under 416px "Next" was clipped away entirely - and since
+	   the table's own footer pagination is display:none down here, that left
+	   no way at all to reach page 2 of 101. */
+	#toh-cards-pager {
+		flex-wrap: wrap;
+	}
+	#toh-cards-page {
+		order: -1;
+		flex: 1 0 100%;
+		text-align: center;
+	}
+	#toh-cards-prev,
+	#toh-cards-next {
+		flex: 1 1 0;
+		justify-content: center;
+		height: 40px;
+	}
 
-.toh-details-table TR:first-child .toh-details-key{
-	border-radius: var(--toh-radius) 0 0 0;
-}
-.toh-details-table TR:first-child .toh-details-value{
-	border-radius: 0 var(--toh-radius) 0 0;
-}
-.toh-details-table TR:last-child .toh-details-key{
-	border-radius: 0 0 0 var(--toh-radius);
-}
-.toh-details-table TR:last-child .toh-details-value{
-	border-radius: 0 0 var(--toh-radius) 0;
-}
-.toh-details-table TR:last-child TD{
-	border-bottom: 1px solid var(--toh-border);
-}
+	/* The summary row has no narrow path at all: every child but the chips is
+	   flex:0 0 auto, so the chips - the part that says what is narrowing the
+	   table - were squeezed to zero width while Advanced was clipped off the
+	   edge. The count is still in the toolbar. */
+	.toh-summary-inner {
+		gap: 6px;
+		padding: 0 12px;
+	}
+	#toh-summary-count {
+		display: none;
+	}
+	#toh-summary-chips {
+		flex: 1 1 auto;
+	}
 
-.toh-details-value A.cell-image{
-	text-decoration: none;
-}
-
-
-
-
-/* Colors ################################################################################################ */  
-
-#toh-table .tabulator-header-filter INPUT{
-	background-color: #f8fafc;	
-}
-
-/* filtered cols */
-#toh-table .tabulator-col.toh-col-filtered{
+	/* auto-fit resolved to three equal 80px tracks, and the CPU - the one spec
+	   people scan a card for - was the only one that did not fit. */
+	.toh-card-specs {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+	.toh-card-spec.is-wide {
+		grid-column: 1 / -1;
+	}
+	.toh-card-spec.is-wide .toh-card-spec-val {
+		white-space: normal;
+		overflow-wrap: anywhere;
+	}
 }
 
-#toh-filters-title.active,
-#toh-filters-presets A,
-#toh-table .tabulator-col.toh-col-filter,
-A.toh-but-clearfilters{
-	background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-	border-color: #6ee7b7;
+/* A Z Flip cover screen is 260px tall: the app bar and hero alone were 296px,
+   so the first device sat a full screen below the fold. Height-keyed, so a
+   short desktop window gets the same treatment. */
+@media screen and (max-height: 480px) {
+	#toh-hero {
+		padding-top: 10px;
+	}
+	#toh-hero H1 {
+		font-size: 18px;
+	}
+	.toh-herosearch {
+		height: 40px;
+		margin-top: 10px;
+	}
+	#toh-stats,
+	#toh-collections {
+		display: none;
+	}
 }
 
-#toh-table .tabulator-col.toh-col-headerfilter,
-A.toh-but-clearheaderfilters{
-	background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
-	border-color: #a5b4fc;
+/* The Columns and Export panels keep top:calc(100% + 6px) while the <=760px
+   block switches them to position:fixed - and a fixed element resolves a
+   percentage top against the viewport, so both opened entirely below the fold.
+   Two dead toolbar buttons on every phone. */
+@media screen and (max-width: 760px) {
+	#toh-cols-container,
+	.toh-menu-panel {
+		position: fixed;
+		top: auto;
+		left: var(--gutter);
+		right: var(--gutter);
+		bottom: max(12px, env(safe-area-inset-bottom));
+		width: auto;
+		max-width: none;
+		max-height: min(60vh, 480px);
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
 }
-#toh-table .tabulator-col.toh-col-allfilter,
-A.toh-but-clearallfilters{
-	background: linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%);
-	border-color: #67e8f9;
-}
-
-
-
-
-
-/* Highlight OpenWrt own Devices ############################################################# */
-#toh-table .tabulator-row.brand-owrt{
-	background-color: rgba(236, 72, 153, 0.1);
-	border: 1px solid rgba(236, 72, 153, 0.2);
-	border-width: 1px 0;
-	color: var(--toh-text);
-}
-#toh-table .tabulator-row.brand-owrt:hover{
-	background-color: rgba(236, 72, 153, 0.2);
-}
-
-
-
-
-/* Overrides for "branch-dev" BODY class ############################################################# */
-
-BODY.branch-dev #toh-header-bg,
-BODY.branch-dev #toh-footer-bg,
-BODY.branch-dev #toh-boot-overlay-bg{
-	background: repeating-linear-gradient(-45deg, rgba(0,0,0,0.02) 0px, rgba(0,0,0,0.02) 15px, rgba(255,255,255,0.02) 15px, rgba(255,255,255,0.02) 30px);
-}
-BODY.branch-dev #toh-dev-badge{
-	display: inline-block;
-}
-
-/* Modern Scrollbar Styling ############################################################# */
-::-webkit-scrollbar {
-	width: 10px;
-	height: 10px;
-}
-::-webkit-scrollbar-track {
-	background: #f1f5f9;
-	border-radius: 5px;
-}
-::-webkit-scrollbar-thumb {
-	background: #cbd5e1;
-	border-radius: 5px;
-	border: 2px solid #f1f5f9;
-}
-::-webkit-scrollbar-thumb:hover {
-	background: #94a3b8;
-}
-
-/* Focus Visible for Accessibility ############################################################# */
-:focus-visible {
-	outline: 2px solid var(--toh-primary);
-	outline-offset: 2px;
-}
-
-/* Smooth Transitions ############################################################# */
-* {
-	transition-timing-function: ease;
+@supports (height: 100dvh) {
+	@media screen and (max-width: 760px) {
+		#toh-cols-container,
+		.toh-menu-panel {
+			max-height: min(60dvh, 480px);
+		}
+	}
 }
