@@ -6,13 +6,12 @@ on:
       - release-test
 
 permissions:
-  contents: write  # Needed for GITHUB_TOKEN usage
+  contents: write # Needed for GITHUB_TOKEN usage
 
 jobs:
   test-release:
     runs-on: ubuntu-latest
     steps:
-
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -69,7 +68,7 @@ jobs:
 
           # Step 2: Get commits since the latest tag (any branch)
           latest_tag=$(git describe --tags --abbrev=0)
-          
+
           # git log "$latest_tag"..HEAD --format="%h%x09%ae%x09%s" > commits_raw.txt
           git log --format="%h%x09%ae%x09%s" > commits_raw.txt
 

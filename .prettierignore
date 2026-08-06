@@ -1,0 +1,15 @@
+# Vendored third-party bundles
+static/lib/
+static/js/jquery_*.js
+static/js/xlsx*.js
+static/js/snarkdown.umd.js
+static/css/bootstrap_*.css
+
+# Inherited upstream sources. Reformatting them rewrites ~11k lines and
+# conflicts with every open branch; drop these once the fork reformats
+# them in a dedicated commit.
+index.html
+static/css/toh.css
+static/js/toh_conf.js
+static/js/toh_main.js
+CHANGELOG.md

@@ -1,0 +1,8 @@
+name: ToH CodeQL config
+
+# Vendored bundles are not our code and only produce noise.
+paths-ignore:
+  - static/lib
+  - static/js/jquery_v3.7.1.min.js
+  - static/js/xlsx.mini.min.js
+  - static/js/snarkdown.umd.js

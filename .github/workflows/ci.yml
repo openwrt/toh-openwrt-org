@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+# A push to a branch that already has a PR open would otherwise run twice.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    if: github.event_name == 'pull_request' || github.repository != 'openwrt/toh-openwrt-org'
+    runs-on: ubuntu-slim
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      # npx fetches Prettier on the fly, so the repo needs no package.json;
+      # the version pin on the next line is the only thing to maintain.
+      - name: Check formatting
+        run: npx --yes prettier@3.9.6 --check .
+
+      - name: Run tests
+        run: node --test
