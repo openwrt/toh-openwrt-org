@@ -30,6 +30,7 @@
 		<link rel="stylesheet" href="static/lib/tabulator-6.3.0/css/tabulator.min.css" >
 
 		<script src="static/js/jquery_v3.7.1.min.js"></script>
+		<script src="static/js/bootstrap_5.3.3.bundle.min.js"></script>
 		<script src="static/lib/tabulator-6.3.0/js/tabulator.min.js"></script>
 		<script src="static/js/snarkdown.umd.js"></script>
 		<!-- <script src="static/js/xlsx.mini.min.js"></script> -->
@@ -198,7 +199,24 @@
 
 
 				<div id="toh-main" class="toh-box">
-					
+
+					<!-- Filters drawer: on small screens the JS moves #toh-top in here,
+					     so the controls stop eating the top of a phone screen -->
+					<div id="toh-mobile-bar">
+						<button type="button" id="toh-offcanvas-toggle" class="toh-but" data-bs-toggle="offcanvas" data-bs-target="#toh-offcanvas" aria-controls="toh-offcanvas">
+							<i class="fa-solid fa-sliders"></i> Filters &amp; Columns
+						</button>
+						<!-- the phone layout is deliberately minimal, so offer the full table -->
+						<div id="toh-view-switch"><a href="#"></a></div>
+					</div>
+					<div class="offcanvas offcanvas-start" tabindex="-1" id="toh-offcanvas" aria-labelledby="toh-offcanvas-title">
+						<div class="offcanvas-header">
+							<h5 class="offcanvas-title" id="toh-offcanvas-title">Filters &amp; Columns</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						</div>
+						<div class="offcanvas-body" id="toh-offcanvas-body"></div>
+					</div>
+
 					<div id="toh-top">
 						<!-- Filters ------------------- -->
 						<div id="toh-top-filters" class="toh-top-block">

@@ -46,6 +46,7 @@ const toh_prefs={
 	p_columns:		'columns',			//name of the columns URL parameter
 	p_brand:		'brand',			//name of the brand search URL parameter
 	p_model:		'model',			//name of the model search URL parameter
+	p_desktop:		'desktop',			//name of the URL parameter forcing the full table on a phone
 
 	cook_prefix:	'toh_',				// the cookie's prefix,
 	cook_duration:	3600*24*730,		// the cookie's duration (in sec),
@@ -58,6 +59,9 @@ const toh_prefs={
 	tooltip_upreset:"User Presets: Click to Load, Shift-click to save, Alt-click to delete",
 	boot_hide:		true,				// Hides the boot overlay, once inited
 	preload: 		true,				// Preload images (in background)
+	col_grow_max:	3,					// a column never grows past this many times its set width
+	mobile_width:	767,				// at or below this viewport width, rows are drawn as cards
+	mobile_view:	'mobile',			// Columns View Preset used by default on that width
 
 };
 
@@ -101,6 +105,18 @@ let tabulatorOptions={
 // ##########################################################################################################################################################
 // Columns Styles ###########################################################################################################################################
 // ##########################################################################################################################################################
+// Columns allowed to absorb the width left over on a wide screen. Icon, count
+// and yes/no columns are deliberately not listed: they are sized to their
+// content on purpose and stretching them would only add white space.
+const toh_colsGrow=[
+	'brand', 'model', 'version', 'cpu', 'target', 'devicetype', 'bootloader',
+	'switch', 'wlanhardware', 'wlandriver', 'whereavailable', 'availability',
+	'comments', 'wlancomments', 'commentinstallation', 'commentrecovery',
+	'commentsnetworkports', 'commentsusbsataports', 'commentsavports',
+	'unsupported_functions', 'supportedcurrentrel', 'supportedsincerel',
+	'serialconnectionparameters',
+];
+
 let colFilterMin={headerFilterPlaceholder:"Minimum", headerFilterFunc:">="}; //, headerFilter:"number"
 let colMutatorInt={ mutator: function(value) {return parseInt(value);} };
 
@@ -362,6 +378,19 @@ let toh_colPresets={
 		...toh_colGroups.links.fields,
 		'picture',
 	],
+	mobile:	[
+		...toh_colGroups.base.fields,
+		'version',
+		'cpu',
+		'flashmb',
+		'rammb',
+		'wlan24ghz',
+		'wlan50ghz',
+		'VIRT_firm',
+		'VIRT_hwdata',
+		'availability',
+		'picture',
+	],
 	mini:	[
 		...toh_colGroups.base.fields,
 		'cpu',
@@ -455,6 +484,28 @@ let toh_filterGroups={
 			'wifi_ac',
 			'wifi_ax',
 			'wifi_be',
+		],
+	},
+
+	ram:{
+		title:"RAM",
+		style:"buttons",
+		members:[
+			'ram_32',
+			'ram_64',
+			'ram_128',
+			'ram_256',
+		],
+	},
+
+	flash:{
+		title:"Flash",
+		style:"buttons",
+		members:[
+			'flash_8',
+			'flash_16',
+			'flash_32',
+			'flash_128',
 		],
 	},
 
@@ -618,6 +669,86 @@ let toh_filterFeatures={
 			{field:	"gpios", 	type:"!=",	value: null},
 			{field:	"gpios", 	type:"!=",	value:'-'},
 		],
+	},
+
+	ram_32:{
+		title:		"32+",
+		description:"at least 32MB RAM",
+		type:		"normal",
+		filters:[
+			{field:	"rammb", 		type:">=",		value:32},
+		],
+		only: "ram",
+	},
+
+	ram_64:{
+		title:		"64+",
+		description:"at least 64MB RAM",
+		type:		"normal",
+		filters:[
+			{field:	"rammb", 		type:">=",		value:64},
+		],
+		only: "ram",
+	},
+
+	ram_128:{
+		title:		"128+",
+		description:"at least 128MB RAM",
+		type:		"normal",
+		filters:[
+			{field:	"rammb", 		type:">=",		value:128},
+		],
+		only: "ram",
+	},
+
+	ram_256:{
+		title:		"256+",
+		description:"at least 256MB RAM",
+		type:		"normal",
+		filters:[
+			{field:	"rammb", 		type:">=",		value:256},
+		],
+		only: "ram",
+	},
+
+	flash_8:{
+		title:		"8+",
+		description:"at least 8MB Flash",
+		type:		"normal",
+		filters:[
+			{field:	"flashmb", 	type:"flash>=",	value:8},
+		],
+		only: "flash",
+	},
+
+	flash_16:{
+		title:		"16+",
+		description:"at least 16MB Flash",
+		type:		"normal",
+		filters:[
+			{field:	"flashmb", 	type:"flash>=",	value:16},
+		],
+		only: "flash",
+	},
+
+	flash_32:{
+		title:		"32+",
+		description:"at least 32MB Flash",
+		type:		"normal",
+		filters:[
+			{field:	"flashmb", 	type:"flash>=",	value:32},
+		],
+		only: "flash",
+	},
+
+	flash_128:{
+		title:		"128+",
+		description:"at least 128MB Flash",
+		type:		"normal",
+		filters:[
+			{field:	"flashmb", 	type:"flash>=",	value:128},
+		],
+		only: "flash",
 	},
 
 	memory_minimum:{
@@ -1102,6 +1233,7 @@ let toh_filterPresets={
 function _rfRowFormatter(row){
 	return tabuRowFormatter(row);
 }
+
 
 function _cPopupModel(e, cell, onRendered) {
 	return CellPopupModel(e, cell, onRendered)

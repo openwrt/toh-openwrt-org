@@ -72,6 +72,17 @@ BODY.toh-loading #toh-page{
 #toh-header-bg{
 	padding: 4px 0;
 	position: relative;
+	/* A flex row rather than floats, so the search sits next to the title for as
+	   long as it fits and drops below only when it genuinely does not. The float
+	   layout had to be undone at a fixed width, which pushed the search onto a
+	   second line while most of the header was still empty. */
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+}
+#toh-header-right{
+	flex: 1 1 auto;
+	min-width: 0;
 }
 
 #toh-header,
@@ -83,8 +94,12 @@ BODY.toh-loading #toh-page{
 #toh-header-logo{
 	float: left;
 }
+/* Symmetric, so the flex row can centre it. The 11px/0 was left over from the
+   float layout this header used before #toh-header-bg became a flex row: with
+   align-items:center the whole padded box gets centred, which left the logo
+   itself sitting 5.5px below the middle of the bar. */
 #toh-header-logo{
-	padding: 11px 16px 0 24px;
+	padding: 0 16px 0 24px;
 }
 #toh-header-logo IMG{
 	height:32px;
@@ -248,9 +263,6 @@ BODY.toh-loading #toh-page{
 }
 
 @media screen and (max-width: 1065px) {
-	#toh-header-title{
-		float: none;
-	}
 	#toh-header-bg,
 	#toh-header-right,
 	#toh-header h1{
@@ -267,7 +279,8 @@ BODY.toh-loading #toh-page{
 		padding-top: 5px;
 	}
 	#toh-header-right{
-		padding-left: 130px;
+		/* no floated logo to clear any more */
+		padding-left: 0;
 		padding-right: 20px;
 	}
 
@@ -428,13 +441,15 @@ body,
 }
 @media screen and (max-width: 1600px) {
 	#toh-tips UL,
-	#toh-changelog-latest UL {
+	#toh-changelog-latest UL,
+	#toh-changelog-previous {
 		column-count: 2;
 	}
 }
 @media screen and (max-width: 900px) {
 	#toh-tips UL,
-	#toh-changelog-latest UL {
+	#toh-changelog-latest UL,
+	#toh-changelog-previous {
 		column-count: 1;
 	}
 }
@@ -1799,4 +1814,562 @@ BODY.branch-dev #toh-dev-badge{
 /* Smooth Transitions ############################################################# */
 * {
 	transition-timing-function: ease;
+}
+
+/* Mobile card layout ---------------------------------------- */
+/* Below toh_prefs.mobile_width the JS adds BODY.toh-mobile, drops the fixed
+   row height and lets the page scroll, and tags every cell with data-label.
+   Here each row becomes a card that prints those labels next to the values. */
+
+@media screen and (max-width: 767px) {
+
+	BODY.toh-mobile #toh-table,
+	BODY.toh-mobile #toh-table-container{
+		height: auto !important;
+		max-height: none !important;
+		overflow: visible !important;
+	}
+	BODY.toh-mobile #toh-table .tabulator-tableholder{
+		height: auto !important;
+		max-height: none !important;
+		overflow: visible !important;
+	}
+
+	/* the labels live in the cards now */
+	BODY.toh-mobile #toh-table .tabulator-header{
+		display: none;
+	}
+
+	BODY.toh-mobile #toh-table .tabulator-table{
+		display: block;
+		width: auto !important;
+	}
+
+	/* one device = one card */
+	BODY.toh-mobile #toh-table .tabulator-row{
+		display: block;
+		position: relative;
+		cursor: pointer;
+		width: auto !important;
+		height: auto !important;
+		min-height: 0;
+		margin: 0 0 10px 0;
+		padding: 4px 0;
+		border: 1px solid #ddd;
+		border-radius: 6px;
+		background-color: #fff;
+		box-shadow: 0 1px 3px rgba(0,0,0,.08);
+	}
+	BODY.toh-mobile #toh-table .tabulator-row.tabulator-selectable:hover{
+		background-color: #fff;
+	}
+
+	BODY.toh-mobile #toh-table .tabulator-row .tabulator-cell{
+		display: flex;
+		align-items: baseline;
+		width: auto !important;
+		height: auto !important;
+		min-height: 0;
+		/* Tabulator pins the frozen columns with inline styles */
+		position: static !important;
+		left: auto !important;
+		text-align: left !important;
+		white-space: normal;
+		overflow: visible;
+		border: 0;
+		border-bottom: 1px solid #f0f0f0;
+		padding: 4px 10px;
+		line-height: 1.4;
+	}
+	BODY.toh-mobile #toh-table .tabulator-row .tabulator-cell:last-child{
+		border-bottom: 0;
+	}
+
+	/* a card should not list the fields this device says nothing about */
+	BODY.toh-mobile #toh-table .tabulator-row .tabulator-cell.toh-cell-empty{
+		display: none;
+	}
+
+	BODY.toh-mobile #toh-table .tabulator-row .tabulator-cell::before{
+		content: attr(data-label);
+		flex: 0 0 40%;
+		padding-right: 10px;
+		color: #666;
+		font-weight: 600;
+		font-size: 12px;
+	}
+
+	/* brand and model are the card's heading, so they need no label and stay
+	   visible while the rest of the fields are folded away */
+	BODY.toh-mobile #toh-table .tabulator-row .tabulator-cell[tabulator-field="brand"]::before,
+	BODY.toh-mobile #toh-table .tabulator-row .tabulator-cell[tabulator-field="model"]::before{
+		content: none;
+	}
+	BODY.toh-mobile #toh-table .tabulator-row .tabulator-cell[tabulator-field="brand"]{
+		font-size: 12px;
+		color: #64748b;
+		padding-bottom: 0;
+		border-bottom: 0;
+	}
+	BODY.toh-mobile #toh-table .tabulator-row .tabulator-cell[tabulator-field="model"]{
+		font-size: 16px;
+		font-weight: 600;
+		padding-top: 1px;
+	}
+
+	/* folded: brand and model share one line, so the list stays scannable and a
+	   screenful is a list of devices rather than one and a half cards */
+	BODY.toh-mobile #toh-table .tabulator-row:not(.toh-card-open){
+		display: flex;
+		align-items: baseline;
+		flex-wrap: wrap;
+		padding: 7px 28px 7px 10px;
+	}
+	BODY.toh-mobile #toh-table .tabulator-row:not(.toh-card-open) .tabulator-cell{
+		display: none;
+	}
+	BODY.toh-mobile #toh-table .tabulator-row:not(.toh-card-open) .tabulator-cell[tabulator-field="brand"],
+	BODY.toh-mobile #toh-table .tabulator-row:not(.toh-card-open) .tabulator-cell[tabulator-field="model"]{
+		display: inline-flex;
+		width: auto !important;
+		border-bottom: 0;
+		padding: 0 6px 0 0;
+	}
+
+	/* the chevron says the card opens */
+	BODY.toh-mobile #toh-table .tabulator-row::after{
+		content: "\f078";
+		font-family: "Font Awesome 6 Free";
+		font-weight: 900;
+		position: absolute;
+		top: 50%;
+		right: 12px;
+		transform: translateY(-50%);
+		font-size: 12px;
+		color: #94a3b8;
+	}
+	BODY.toh-mobile #toh-table .tabulator-row.toh-card-open::after{
+		content: "\f077";
+		top: 18px;
+		transform: none;
+	}
+
+	/* the edit pencil is a table affordance, not a card one */
+	BODY.toh-mobile #toh-table .tabulator-row .tabulator-cell[tabulator-field="VIRT_edit"]{
+		display: none;
+	}
+
+	/* the pager sits on one line by default and is what makes the page scroll
+	   sideways; let it wrap and keep the controls tappable */
+	BODY.toh-mobile #toh-table .tabulator-footer .tabulator-footer-contents{
+		flex-wrap: wrap;
+		justify-content: center;
+		row-gap: 6px;
+	}
+	BODY.toh-mobile #toh-table .tabulator-footer .tabulator-paginator{
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		align-items: center;
+		gap: 4px;
+	}
+	BODY.toh-mobile #toh-table .tabulator-footer .tabulator-page{
+		margin: 0;
+		padding: 5px 9px;
+	}
+	BODY.toh-mobile #toh-table .tabulator-footer .tabulator-page-counter{
+		width: 100%;
+		text-align: center;
+	}
+
+	/* the tips and changelog boxes sit in a .row that keeps its desktop gutters */
+	BODY.toh-mobile #toh-info .toh-box{
+		padding: 12px 14px;
+	}
+}
+
+
+/* Page overflow ------------------------------------------- */
+
+/* #toh-footer carries .row but sits outside the page's .container-fluid, so the
+   row's negative gutters have nothing to cancel out and hang over both edges.
+   That is what makes the page scroll sideways on a phone. */
+#toh-footer{
+	margin-left: 0;
+	margin-right: 0;
+}
+/* it then nests a .container, which adds a second gutter inside that */
+#toh-footer .container{
+	width: auto;
+	max-width: none;
+}
+
+/* .row is a flex container in Bootstrap 5, so these plain wrappers became flex
+   items sized by their content instead of filling the row as they used to */
+#toh-header-bg,
+#toh-footer-bg{
+	flex: 1 1 100%;
+	min-width: 0;
+}
+
+
+/* Mobile filters drawer ------------------------------------- */
+/* The button and the drawer only exist below the mobile breakpoint; on a
+   desktop #toh-top stays where it is and the button is hidden. */
+
+#toh-offcanvas-toggle{
+	display: none;
+}
+
+@media screen and (max-width: 767px) {
+
+	BODY.toh-mobile #toh-offcanvas-toggle{
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		min-height: 40px;
+		margin: 0;
+	}
+
+	/* the panels were built to sit side by side across a wide page */
+	BODY.toh-mobile #toh-offcanvas #toh-top,
+	BODY.toh-mobile #toh-offcanvas .toh-top-block{
+		display: block;
+		width: auto;
+		float: none;
+		margin: 0 0 10px 0;
+		border: 0;
+	}
+	BODY.toh-mobile #toh-offcanvas .toh-top-container{
+		position: static;
+		width: auto;
+		max-height: none;
+	}
+	BODY.toh-mobile #toh-offcanvas #toh-top-buttons{
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+	}
+	BODY.toh-mobile #toh-offcanvas .toh-buttons-left,
+	BODY.toh-mobile #toh-offcanvas .toh-buttons-right{
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		float: none;
+	}
+	BODY.toh-mobile #toh-offcanvas .toh-but{
+		margin: 0;
+	}
+}
+
+
+/* Filters drawer contents ----------------------------------- */
+/* The panels inside the drawer were laid out for a wide page: floated blocks,
+   12px rows and controls a finger cannot hit. This makes them a plain stack of
+   full width, tappable rows. Only inside the drawer, so the desktop panels are
+   untouched. */
+
+@media screen and (max-width: 767px) {
+
+	/* the two section headers open the panels, so they should look like it */
+	BODY.toh-mobile #toh-offcanvas .toh-top-title{
+		background: #f1f5f9;
+		border: 1px solid #e2e8f0;
+		border-radius: 6px;
+		margin-bottom: 8px;
+		padding: 0;
+		min-height: 0;
+	}
+	BODY.toh-mobile #toh-offcanvas .toh-top-title-left{
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		float: none;
+	}
+	BODY.toh-mobile #toh-offcanvas .toh-top-title-toggle{
+		flex: 1 1 auto;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		min-height: 48px;
+		padding: 0 12px;
+		font-size: 15px;
+		font-weight: 600;
+		text-decoration: none;
+	}
+
+	/* saved preset slots are a power feature driven by tooltips and modifier
+	   clicks, neither of which exists on a touch screen */
+	BODY.toh-mobile #toh-offcanvas .toh-upresets{
+		display: none;
+	}
+
+	/* this option box is floated to the side of a wide panel */
+	BODY.toh-mobile #toh-offcanvas #toh-filters-options{
+		float: none;
+		width: auto;
+		margin: 0 0 12px 0;
+		padding: 10px 12px;
+		border: 1px solid #e2e8f0;
+		border-radius: 6px;
+		background: #f8fafc;
+	}
+	BODY.toh-mobile #toh-offcanvas .toh-options-radios label,
+	BODY.toh-mobile #toh-offcanvas .toh-options-radios div{
+		min-height: 34px;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	/* one filter per row: name first, what it does underneath */
+	BODY.toh-mobile #toh-offcanvas .toh-filter-feature{
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1px;
+		padding: 7px 4px;
+		border-bottom: 1px solid #f1f5f9;
+	}
+	BODY.toh-mobile #toh-offcanvas .toh-filter-feature .toh-filter-title{
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		width: 100%;
+		font-size: 15px;
+	}
+	BODY.toh-mobile #toh-offcanvas .toh-filter-feature .toh-filter-title INPUT{
+		width: 20px;
+		height: 20px;
+		flex: 0 0 auto;
+	}
+	BODY.toh-mobile #toh-offcanvas .toh-filter-feature .toh-filter-description{
+		font-size: 12px;
+		color: #64748b;
+		padding-left: 30px;
+	}
+	BODY.toh-mobile #toh-offcanvas .toh-filter-feature .toh-filter-button{
+		text-decoration: none;
+	}
+
+	/* the presets read the same way: name, then what it selects */
+	BODY.toh-mobile #toh-offcanvas .toh-filter-preset{
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 2px;
+		padding: 6px 4px;
+		border-bottom: 1px solid #f1f5f9;
+	}
+	BODY.toh-mobile #toh-offcanvas .toh-filter-preset .toh-filter-title{
+		width: 100%;
+	}
+	BODY.toh-mobile #toh-offcanvas .toh-filter-preset .toh-filter-button{
+		display: flex;
+		align-items: center;
+		min-height: 38px;
+		width: 100%;
+		padding: 0 10px;
+		border-radius: 6px;
+		font-size: 14px;
+		text-decoration: none;
+	}
+	BODY.toh-mobile #toh-offcanvas .toh-filter-preset .toh-filter-description{
+		font-size: 12px;
+		color: #64748b;
+		padding-left: 10px;
+	}
+
+	/* group headings inside a panel */
+	BODY.toh-mobile #toh-offcanvas .toh-group-title{
+		margin: 14px 0 4px 0;
+		font-size: 13px;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: .04em;
+		color: #64748b;
+	}
+	BODY.toh-mobile #toh-offcanvas .toh-group UL{
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	/* column presets and the clear buttons, at a size a thumb can hit */
+	BODY.toh-mobile #toh-offcanvas .toh-view,
+	BODY.toh-mobile #toh-offcanvas .toh-but{
+		display: inline-flex;
+		align-items: center;
+		min-height: 40px;
+		padding: 0 14px;
+		margin: 0 6px 6px 0;
+		border-radius: 6px;
+		font-size: 14px;
+	}
+	BODY.toh-mobile #toh-offcanvas #toh-cols-presets,
+	BODY.toh-mobile #toh-offcanvas #toh-top-buttons{
+		display: flex;
+		flex-wrap: wrap;
+		padding-top: 6px;
+	}
+}
+
+
+/* Filter button groups -------------------------------------- */
+/* Groups marked style:"buttons" in toh_filterGroups render as a row of
+   Bootstrap buttons instead of a column of checkboxes: the options are steps
+   of one value, so picking one of them reads better than ticking a box. */
+
+.toh-filtgroup-buttons{
+	margin-bottom: 10px;
+}
+.toh-filtgroup-buttons .toh-filter-buttons{
+	padding: 2px 0 4px 0;
+}
+.toh-filtgroup-buttons .btn-group .btn{
+	--bs-btn-color: #0081b3;
+	--bs-btn-border-color: #b8dcea;
+	--bs-btn-hover-bg: #0099d9;
+	--bs-btn-hover-border-color: #0099d9;
+	--bs-btn-active-bg: #0081b3;
+	--bs-btn-active-border-color: #0081b3;
+	--bs-btn-font-size: 12px;
+	padding: 3px 10px;
+}
+
+@media screen and (max-width: 767px) {
+	/* in the drawer there is room to make them properly tappable */
+	BODY.toh-mobile #toh-offcanvas .toh-filtgroup-buttons .btn-group{
+		width: 100%;
+	}
+	BODY.toh-mobile #toh-offcanvas .toh-filtgroup-buttons .btn-group .btn{
+		flex: 1 1 0;
+		/* a comfortable tap target */
+		min-height: 44px;
+		padding: 10px 6px;
+		--bs-btn-font-size: 14px;
+	}
+}
+
+
+/* Filter and preset rows ------------------------------------ */
+/* These sizes hold at every width. The panel used to pack its filters into
+   17px rows with 13px checkboxes, which is awkward with a mouse as well, so
+   the phone is not the only place worth fixing. The drawer takes it further
+   below, where a finger rather than a pointer does the aiming. */
+
+.toh-filter-feature,
+.toh-filter-preset{
+	padding: 2px 4px;
+}
+.toh-filter-feature .toh-filter-title,
+.toh-filter-preset .toh-filter-title{
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 26px;
+}
+.toh-filter-feature .toh-filter-title INPUT{
+	width: 16px;
+	height: 16px;
+	flex: 0 0 auto;
+}
+.toh-filter-description{
+	color: #64748b;
+}
+#toh-cols-presets a.toh-view,
+#toh-top-buttons .toh-but,
+#toh-filters-presets .toh-filter-button{
+	display: inline-flex;
+	align-items: center;
+	min-height: 28px;
+}
+
+
+/* Layout switch --------------------------------------------- */
+/* The phone layout shows a small set of columns on purpose. This offers the
+   full table to anyone who would rather pan around it, and the way back. */
+
+#toh-mobile-bar,
+#toh-view-switch{
+	display: none;
+}
+#toh-view-switch A{
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 40px;
+	padding: 0 14px;
+	color: #0081b3;
+	font-size: 14px;
+	text-decoration: none;
+}
+
+@media screen and (max-width: 767px) {
+	/* at the top, where it is seen: at the foot of the page it sat below every
+	   card, more than two screens down */
+	#toh-mobile-bar{
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		flex-wrap: wrap;
+		padding: 4px 8px;
+	}
+	#toh-view-switch{
+		display: block;
+	}
+}
+
+
+/* Review feedback (soif, PR #54) -----------------------------------------------
+   Small-screen refinements. Last in the file on purpose: these override the
+   mobile rules above, which are more specific about nothing but come first. */
+@media screen and (max-width: 767px) {
+
+	/* The card's heading read as two words run together. Brand stays left as the
+	   grouping it is, the model goes to the right edge just before the chevron,
+	   so a scrolling list has one column of makers and one of names. */
+	BODY.toh-mobile #toh-table .tabulator-row:not(.toh-card-open) .tabulator-cell[tabulator-field="model"]{
+		margin-left: auto;
+		padding-right: 0;
+		text-align: right;
+	}
+
+	/* The panel charged 24px of the screen for a border down each side. Full
+	   bleed instead: on a 390px phone that is the width of a whole column. */
+	#toh-main.toh-box{
+		margin-left: calc(var(--bs-gutter-x, 1.5rem) * -0.5);
+		margin-right: calc(var(--bs-gutter-x, 1.5rem) * -0.5);
+		border-left: 0;
+		border-right: 0;
+		border-radius: 0;
+	}
+
+	/* ... and the drawer kept 16px of its own on each side, on top of that */
+	#toh-offcanvas .offcanvas-body{
+		padding-left: 10px;
+		padding-right: 10px;
+	}
+
+	/* the preset buttons sat flush against the drawer edge */
+	#toh-filters-presets{
+		padding-left: 4px;
+	}
+}
+
+/* Tap targets -----------------------------------------------------------------
+   The column checkboxes are 16px rows - fine for a pointer, not for a finger.
+   Keyed on the input device rather than the width, so a touch tablet gets them
+   too and a small desktop window keeps the density it was tuned for. */
+@media (pointer: coarse) {
+	.toh-col{
+		padding-top: 9px;
+		padding-bottom: 9px;
+		line-height: 1.3;
+	}
+	.toh-col INPUT[type=checkbox]{
+		width: 17px;
+		height: 17px;
+	}
 }
