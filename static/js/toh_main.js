@@ -12,6 +12,9 @@
 	You should have received a copy of the GNU General Public License along with this program. 
 	If not, see <https://www.gnu.org/licenses/>. 
  */
+// toh_main.js
+//
+//	Boot: wires the DOM up and starts the table.
 
 // variables ##################################################################################################################
 
@@ -19,1433 +22,12 @@
 const toh_img_urls=[];	// holds all images urls
 
 let toh_firmwares=[]; 				// holds all releases
+let toh_firmwares_index=new Set();	// "id|target" of every profile, for O(1) lookups
 let toh_firmwares_fetched=false;	// confirm if releases have been fetched
+let toh_stable_version='';			// the release those profiles belong to, e.g. "25.12.5"
 
-
-
-
-// Functions for Cell Model Popup Formatter ###################################################################################
-
-// get my Columns definitions -----------------------------------
-function getMyColumnDefinition(field){
-	let cols=toh_colStyles;
-	let col={};
-	if(typeof(cols[field]) != 'undefined' ){
-		col=cols[field];
-		if(typeof(col.headerTooltip) != 'undefined' && col.headerTooltip !==''){
-			col.f_title=col.headerTooltip;
-		}
-		else if(typeof(col.title) != 'undefined' && col.title !==''){
-			col.f_title=col.title;
-		}
-		else{
-			col.f_title=field;
-		}
-	}
-	else{
-		col.f_title=field;
-	}
-	return col;
-}
-
-// makes an A tag from an URL ----------------------------------------------
-function formatLinkToHtml(url, name='link', target_blank=true){
-	let pattern = /^http(s)?:\/\//;
-	let target='';
-	if(target_blank){
-		target='_blank';
-	}
-	if(pattern.test(url)){
-		return '<a href="'+url+'" target="'+target+'" title="'+url+'">'+name+'</a>';
-	}
-	return url;
-}
-
-
-
-
-// Filters functions ##########################################################################################################
-
-// Make filter Preset Button ------------------------------------------
-function htmlFilterPresetButton(myclass, value){
-	var icon='';
-	var name=value;
-	name = name.replace(/_/g,' ');
-	name = name.replace(/(^\w{1})|(\s{1}\w{1})/g, match => match.toUpperCase()); // UcFirst
-	return '<a href="#" class="'+myclass+'" data-key="'+value+'">'+icon+name+'</a>'+"";
-}
-
-// Make Filter Preset ------------------------------------------
-function htmlFilterDiv(filt,key,is_feature=false){
-	var html='';
-	var myclass='preset';
-	if(is_feature){
-		myclass='feature';
-	}
-	if(filt.type=='admin'){
-		myclass +=" toh-filter-admin";
-	}
-	html +='<div class="toh-filter toh-filter-'+myclass+'">';
-	html +='<span class="toh-filter-title">';
-	if(is_feature){
-		var only=''
-		if(typeof filt.only =='string'){
-			only=filt.only;
-		}
-		html +='<input type="checkbox" data-key="'+key+'" data-only="'+only+'">';
-	}
-	html +='<a href="#" class="toh-filter-button" data-key="'+key+'" title="';
-	if(is_feature){
-		html +=makeFeatureDescription(key);
-	}
-	html +='">'+filt.title+'</a></span>';
-	html +='<span class="toh-filter-description">'+filt.description+'</span>';
-	html +="</div>\n";
-	return html;
-}
-
-// display Filters Presets ------------------------------------------------
-function buildFiltersPresets(){
-	var tmp_html='';
-	for (const key in toh_filterPresets){
-		tmp_html+=htmlFilterDiv(toh_filterPresets[key],key);
-	}
-	$('#toh-filters-presets .toh-filters-list').html(tmp_html);
-}
-
-// display Filters Features ------------------------------------------------
-function buildFiltersFeatures(){
-	var tmp_html='';
-	for (const group in toh_filterGroups){
-		tmp_html +=htmlGroup(toh_filterGroups[group].title,group,'filt');
-		toh_filterGroups[group].members.forEach(filt => {
-			tmp_html +=htmlFilterDiv(toh_filterFeatures[filt],filt,true);
-		});
-		tmp_html +="</ul>\n</div>\n";
-	}
-	$('#toh-filters-features-content').html(tmp_html);
-}
-
-// Formats one Filter description -------------------------------------
-function formatFilterDesc(filter){
-	var title=toh_colStyles[filter.field].title;
-	return title + " " + filter.type + " '" +filter.value + "'"; 
-}
-
-// Makes the Feature Tooltip ------------------------------------------
-function makeFeatureDescription(key){
-	var features=toh_filterFeatures[key];
-	var desc='';
-	var done_and=false;
-	var done_or=false;
-	$.each(features.filters,function(i,filter){
-		if(Array.isArray(filter)){
-			desc +="(";
-			$.each(filter,function(j,orfilter){
-				if(done_or){
-					desc +=" OR ";
-				}
-				desc +=formatFilterDesc(orfilter);
-				done_or=true;
-			});
-			desc +=") ";
-			done_or=false;
-		}
-		else{
-			if(done_and){
-				desc +=" AND ";
-			}
-			desc +=formatFilterDesc(filter);
-		}
-		done_and=true;
-	});
-	return desc;
-}
-
-// Check on/off ALL features checkboxes -------------------------
-function checkAllFeatures(state=true){
-	$(".toh-filter-feature INPUT").prop('checked',state);
-}
-
-// Check on/off a feature checkbox ------------------------------
-function checkFeature(key,state=true){
-	if(state){
-		var group=$(".toh-filter-feature INPUT[data-key="+key+"]").attr('data-only');
-		//myLogStr(group,1);
-		if(group.length > 0){
-			$(".toh-filter-feature INPUT[data-only="+group+"]").prop('checked',false);
-		}
-	}
-	$(".toh-filter-feature INPUT[data-key="+key+"]").prop('checked',state);
-}
-
-// Show or Hide ALL features --------------------------------------
-function clearAllFeatures() {
-	tabuTable.clearFilter();
-}
-
-// Return a (flatted) list of the current filtered fields ------------------
-function getTableFiltersFields(type='filters'){
-	var fields=[];
-	var filters;
-	if(type=='filters'){
-		filters	=tabuTable.getFilters();
-	}
-	else if(type=='headerfilters'){
-		filters	=tabuTable.getHeaderFilters();
-	}
-	else{ // all
-		filters	=tabuTable.getFilters(true);
-	}
-	myLogFunc('getTableFiltersFields type='+type+' ----');
-	myLogObj(filters,'filters');
-	$.each(filters,function(i,f){
-		if(Array.isArray(f)){
-			$.each(f,function(j,ff){
-				if (!fields.includes(ff.field)){
-					fields.push(ff.field);					
-				}
-			});
-		}
-		else{
-			if (!fields.includes(f.field)){
-				fields.push(f.field);					
-			}
-		}
-
-	});
-	myLogObj(fields,'fields');
-	return fields;
-}
-
-// Apply a Filter Preset ----------------------------------------------------
-function applyFilterPreset(key){
-	myLogFunc();
-	var set=getFilterSet('preset',key);
-	if(Object.keys(set).length > 0 ){
-		myLogStr('key: '+key);
-		myLogObj(set.filters,'Filter Set');
-		myLogObj(tabuTable.getFilters(),'Tabu Filters (before)');
-
-		setPresetSelectedClass('features',key);
-		showLoading();
-
-		tabuTable.clearFilter();			// needed?
-		tabuTable.setFilter(set.filters ); //,  {matchAll:true}
-
-		myLogObj(tabuTable.getFilters(),'Tabu Filters (after)');
-
-		checkAllFeatures(false);
-		if(set.features.length > 0 ){		
-			$.each(set.features,function(j,feat){
-				checkFeature(feat);
-			});	
-		}
-	}
-}
-
-// Check a Filter Feature and clear current preset -------------------------
-function checkFeatureAndClearPreset(key,bool){
-	myLogFunc('checkFeatureAndClearPreset : '+key+' / '+bool);
-	var set=getFilterSet('feature',key);
-	if(typeof(set.filters) !='object'){
-		return false;
-	}
-	myLogObj(set.filters,'filter set');
-	if(set.filters.length > 0){
-		myLogObj('Set feature '+key+' DONE!');
-		setPresetSelectedClass('features','custom');	
-		checkFeature(key,bool);
-		//applyCheckedFeatures();
-	}
-}
-
-// set tabulator filters from checked features --------------------------------------
-function applyCheckedFeatures(){
-	myLogFunc();
-	var features=getCheckedFeatures();
-	myLogObj(features,'checked features');
-	var filters=[];
-	features.forEach(feat => {
-		var feat_filters=toh_filterFeatures[feat].filters;
-		feat_filters.forEach(filt => {
-			if(typeof filt === 'object'){
-				filters.push(filt);
-			}
-		});
-	});
-	showLoading();
-	filters=reorderFilters(filters); // certainly not needed, but eases debug
-	tabuTable.setFilter(filters);
-}
-
-
-// reorder filters : objects, then arays-----------------------------------------------
-function reorderFilters(filters) {
-	myLogFunc();
-	const simpleFilters = [];
-	const arrayFilters = [];
-
-	filters.forEach(filter => {
-		if(Array.isArray(filter)) {
-			arrayFilters.push(filter);
-		} 
-		else if(typeof filter === 'object' && filter !== null) {
-			simpleFilters.push(filter);
-		}
-	});
-	return [...simpleFilters, ...arrayFilters];
-}
-
-
-// get filters array (also merge features filters for Presets)--------------------
-function getFilterSet(type, key){
-	myLogFunc();
-	var set;
-	if(type=='preset' && key in toh_filterPresets){
-		set=JSON.parse(JSON.stringify(toh_filterPresets[key])); // makes a clone
-	}
-	else if(type=='feature' && key in toh_filterFeatures){
-		set=JSON.parse(JSON.stringify(toh_filterFeatures[key])); // makes a clone
-	}
-	else{
-		myLogStr('getFilterSet - Type: '+ type +', Unknown key: "'+key+'"');
-		return {};
-	}
-
-	//merge filters with features.filters
-	if(type=='preset'){
-		if( typeof(set.features) =='object'){ // cant we write it shorter ?
-			$.each(set.features,function(i,fv){
-				// myLogStr(i+'->'+fv,4);
-				$.each(toh_filterFeatures[fv].filters,function(j,filt){
-					set.filters.push(filt);
-				});
-			});
-		}
-		else{
-			set.features={};
-		}
-	}
-	// myLogObj(set,'Filter Set');
-	return set;
-}
-
-// preload DB images -----------------------------------------------
-function PreLoadImagesCache(){
-	if(!toh_prefs.preload){
-		return;
-	}
-	toh_img_urls.forEach(url => {
-		const img = new Image();
-		img.src = url;
-	});
-}
-
-
-
-
-// Views functions ############################################################################################################
-
-// Make a column line -------------------------------------------
-function htmlColumnLine(field,col,checked){
-	let html='';
-	let title	=col.title;
-	let tip		=col.headerTooltip;
-	if(tip==true){tip='';}
-	html +='<div class="toh-col toh-col-column">';
-	html +='<input type="checkbox" data-key="'+field+'"';
-	if( checked ){html +=' checked="true"';} 
-	html +='> <a href="#" title="'+tip+'">'+title+"</a>\n";
-	html +="</div>";
-	return html;
-}
-
-// Make a column Group  ------------------------------------------
-function htmlGroup(title,group,type){
-	let html='';
-	let names={
-		view: 'toh-viewgroup',
-		filt: 'toh-filtgroup',
-	};
-	let icons={
-		view: 'fa-solid fa-square',
-		filt: 'fa-solid fa-filter',
-	};
-	let ttip={
-		view: 'Toggle group visibility',
-		filt: '',
-	};
-	html +='<div class="toh-group '+names[type]+'" data-group="'+group+'">'+"\n"+'<div class="toh-group-title '+names[type]+'-title"><a href="#" class="view-link" title="'+ttip[type]+'"><i class="'+icons[type]+'"></i> '+title+'</a></div>'+"\n";
-	html +='<ul>'+"\n";
-	return html;
-}
-
-// Display the views presets ---------------------------------
-function buildViewsPresets(){
-	var tmp_html='';
-	tmp_html+=htmlFilterPresetButton('toh-view toh-view-custom','custom');
-	tmp_html+=htmlFilterPresetButton('toh-view','all');
-	tmp_html+=htmlFilterPresetButton('toh-view','none');
-	for (const key in toh_colPresets){
-		tmp_html+=htmlFilterPresetButton('toh-view',key);
-	}
-	$('#toh-cols-presets').html(tmp_html);
-}
-
-// Displays the views Columns ---------------------------------
-function buildViewsColumns(){
-	let columns = tabuTable.getColumnDefinitions();  
-	let view="";
-	let col={};
-
-	// display known (on Prefs) fields
-	$.each(toh_colGroups,function(key,arr){
-		view +=htmlGroup(arr.name,key,'view');
-		$.each(arr.fields,function(k,field){
-			col=tabuTable.getColumn(field);
-			view +=htmlColumnLine(field, col.getDefinition(), col.isVisible())
-			//remove from colums
-			const index = columns.findIndex(item => item.field === field);
-			if (index !== -1) {columns.splice(index, 1)[0];}
-		});
-		view +="</ul>\n</div>\n";
-	});
-
-	// handle remaining unsorted fields (not defined in Prefs)
-	if(columns.length > 0){
-		view +=htmlGroup('Unsorted','unsorted','view');
-		$.each(columns,function(key,arr){
-			// if(arr.field === undefined){
-			// 	return;
-			// }
-			col=tabuTable.getColumn(arr.field);
-			var def=col.getDefinition();
-			def.headerTooltip +=' ('+arr.field+')'; //auto column dont have a tootil (only 'true')
-			view +=htmlColumnLine(arr.field, def , col.isVisible())
-		});
-		view +="</ul>\n</div>\n";
-	}
-
-	$("#toh-cols-columns-content").html(view);
-	updateColGroupIcons();
-}
-
-// Check on/off a Column checkbox ------------------------------
-function checkColumn(key,state=true){
-	$(".toh-col-column INPUT[data-key="+key+"]").prop('checked',state);
-	updateColGroupIcons();
-}
-
-// Check on/off ALL Columns checkboxes -------------------------
-function checkAllColumns(state=true){
-	$(".toh-col-column INPUT").prop('checked',state);
-	updateColGroupIcons();
-}
-
-//  Show and Check on/off Column checkbox ------------------------------
-function showAndCheckColumn(col,state=true){
-	myLogFunc('showAndCheckColumn : '+col+' / '+state);
-	showLoading();
-	if(state){
-		tabuTable.showColumn(col);
-	}
-	else{
-		tabuTable.hideColumn(col);
-	}
-	UpdateCountCols();
-	checkColumn(col,state);
-}
-
-//  Show and Check Persistent Columns ------------------------------
-function showAndCheckPersistentColumns(){
-	showAndCheckColumn('VIRT_edit');
-	showAndCheckColumn('brand');
-	showAndCheckColumn('model');
-}
-
-// Show or Hide ALL columns --------------------------------------
-function showAllColumns(bool) {
-	myLogFunc();
-	var columnDefs = tabuTable.getColumnDefinitions();  
-	columnDefs.forEach(function(column) {
-		if(bool){
-			tabuTable.showColumn(column.field);
-		}
-		else{
-			tabuTable.hideColumn(column.field);
-		}
-	});
-	UpdateCountCols();
-}
-
-// Apply a View Preset : show/hide columns -----------------------
-function applyColumnPreset(key){
-	myLogFunc();
-	showLoading();
-	//tabuTable.blockRedraw();
-	setTimeout(function(){
-		if(key=='all'){
-			setPresetSelectedClass('columns',key);
-			checkAllColumns(true);
-			showAllColumns(true);
-		}
-		else if(key=='none'){
-			setPresetSelectedClass('columns',key);
-			checkAllColumns(false);
-			showAllColumns(false);
-		}
-		else{
-			var set=getColumnSet(key);
-			if(set.length > 0){
-				setPresetSelectedClass('columns',key);
-				checkAllColumns(false);
-				showAllColumns(false);
-				set.forEach(col => {
-					showAndCheckColumn(col);
-				});	
-			}
-		}
-	},0);
-	//tabuTable.redraw(true);
-	//tabuTable.restoreRedraw();
-}
-
-// Apply a (single) Column : show/hide -----------------------
-function applyColumCol(key,state){
-	myLogFunc();
-	setPresetSelectedClass('columns','custom');	
-	showAndCheckColumn(key,state);
-}
-
-// get filters array (also merge features filters for Presets)--------------------------
-function getColumnSet(key){
-	myLogFunc();
-	var set=[];
-	if(key=='all'){
-		$.each(toh_colPresets,function(k,col){
-			if(!set.includes(col)){
-				set.push(col);
-			}
-		});
-	}
-	else if (key=='none'){
-		set=[];
-	}
-	else if(typeof(toh_colPresets[key]) !='undefined'){
-		set=toh_colPresets[key];
-	}
-	return set;
-}
-
-// set columns view depending on the selected Filter option ---------------------------------
-function applyColumnsFromFilters(){
-	myLogFunc();
-	var opt=$("#toh-filters-options INPUT[name='filtcol']:checked").val();
-	var fields	=getTableFiltersFields('all');
-	showLoading();
-	setTimeout(function(){
-		if(opt=='add'){
-			setPresetSelectedClass('columns','custom');
-			$.each(fields,function(i,col){
-				showAndCheckColumn(col);
-			});
-			showAndCheckPersistentColumns();
-		}
-		else if(opt=='repl'){
-			setPresetSelectedClass('columns','custom');
-			showAllColumns(false);
-			checkAllColumns(false);
-			$.each(fields,function(i,col){
-				showAndCheckColumn(col);
-			});
-			showAndCheckPersistentColumns();
-		}
-	},0);
-}
-
-// Update group Icons in the columns block ------------------
-function updateColGroupIcons(){
-	myLogFunc();
-	$('.toh-viewgroup').each(function(i){
-		var total=$(this).find('.toh-col-column').length;
-		var checked=$(this).find('.toh-col-column INPUT:checked').length;
-		var icon;
-		if(checked==total){
-			icon='fa-regular fa-square-check';
-		}
-		else if(checked==0){
-			icon='fa-regular fa-square';
-		}
-		else{
-			icon='fa-regular fa-square-minus';
-		}
-		$(this).find('.toh-viewgroup-title I').removeClass().addClass(icon);
-	});
-}
-
-//
-function setPresetSelectedClass(type,key=''){
-	myLogFunc('setPresetSelectedClass : '+type+'/'+key);
-	var myclass='toh-selected';
-	var sel;
-	if(type=='features'){
-		sel='.toh-filters-presets';
-	}
-	else if(type=='columns'){
-		sel='#toh-cols-title .toh-top-title-presets';
-
-	}
-	else{
-		myLogStr('setPresetSelectedClass - Unkwnon type:'+type,1);
-		return false;
-	}
-	if(key !=''){
-		$(sel+' A').removeClass(myclass);
-		$(sel+' A[data-key='+key+']').addClass(myclass);
-		//toh_current_preset.columns=key;
-	}
-	else{
-		$(sel+' A').removeClass(myclass);
-		//toh_current_preset.columns='';
-	}
-}
-
-
-
-
-// URL functions ##############################################################################################################
-
-// Get Url parameter -----------------------------------------------
-function getUrlParameter(name) {
-	name = name.replace(/\[/, '\\[').replace(/[\]]/, '\\]');
-	var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
-	var results = regex.exec(location.search);
-	return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
-}
-
-// Get Url parameter or default value -----------------------------
-function getUrlParameterOrDefault(name, defaultValue='') {
-	var value = getUrlParameter(name);
-	return value !== '' ? value : defaultValue;
-}
-
-// update the browser Url (without reloading the page) ------------
-function updateBrowserUrl(newURL) {
-	const state = {}; // State object
-	const title = ''; // Title (ignored by most browsers)
-	history.replaceState(state, title, newURL);
-}
-
-// get the currently checked features ---------------
-function getCheckedFeatures(){
-	var checked=[];
-	$('.toh-filters-list INPUT').each(function(i){
-		if($(this).is(':checked')){
-			checked.push($(this).attr('data-key'));
-		}
-	});
-	return checked;
-}
-
-// get the currently checked columns ---------------
-function getCheckedColumns(){
-	var checked=[];
-	$('.toh-col-column INPUT').each(function(i){
-		if($(this).is(':checked')){
-			checked.push($(this).attr('data-key'));
-		}
-	});
-	// myLogObj(checked,'checked');
-	return checked;
-}
-
-// build, then update the browser Url  ------------------------------
-function buildBrowserUrl(and_update=true){
-	myLogFunc();
-	var url=window.location.pathname;
-	var params=[];
-	var tmp_list;
-	var tmp_preset;
-	var tmp_search;
-
-	// make features
-	tmp_preset=$('#toh-filters-presets A.toh-selected').attr('data-key');
-	if(tmp_preset !=undefined){
-		params.push(toh_prefs.p_filter+'='+tmp_preset);
-	}
-	else{
-		tmp_list= getCheckedFeatures();
-		if(tmp_list.length>0){
-			params.push( toh_prefs.p_features+'='+tmp_list.join(",") );
-		}
-	}
-
-	// make colums
-	tmp_preset=$('#toh-cols-presets A.toh-selected').attr('data-key');
-	if(tmp_preset !=undefined && tmp_preset !='custom'){
-		params.push(toh_prefs.p_view+'='+tmp_preset);
-	}
-	else{
-		tmp_list= getCheckedColumns();
-		if(tmp_list.length>0){
-			params.push( toh_prefs.p_columns+'='+tmp_list.join(",") );
-		}  
-	}
-
-	// make header search
-	tmp_search=$('#toh-search-input-brand').val();
-	if(tmp_search && tmp_search.length>0){
-		params.push( toh_prefs.p_brand+'='+encodeURIComponent(tmp_search) );
-	}
-	tmp_search=$('#toh-search-input-model').val();
-	if(tmp_search && tmp_search.length>0){
-		params.push( toh_prefs.p_model+'='+encodeURIComponent(tmp_search) );
-	}
-
-	if(and_update){
-		url +="?";
-		url +=params.join('&');
-		updateBrowserUrl(url);
-	}
-	//myLogStr('URL: '+url);
-}
-
-
-
-
-// Cookie functions ###########################################################################################################
-
-// save a cookie ---------------------------------------------------
-function saveCookie(c_name, content, do_delete=false, type='json'){
-	myLogFunc();
-	var c_path=toh_prefs.cook_path;
-	if(c_path==''){
-		c_path=window.location.pathname;
-	}
-	var c_content=content;
-	if(type=='json'){
-		c_content=JSON.stringify(content);
-	}
-	var dur=toh_prefs.cook_duration;
-	if(do_delete){
-		dur=0;
-	}
-	document.cookie = toh_prefs.cook_prefix + c_name + "=" + encodeURIComponent(c_content) + "; max-age="+dur+"; path="+c_path;
-}
-
-// extract a cookie from the list---------------------------------------------------
-function _extractCookie(name) {
-	myLogFunc();
-	const value = `; ${document.cookie}`;
-	const parts = value.split(`; ${name}=`);
-	if (parts.length === 2) return parts.pop().split(';').shift();
-  }
-
-// load a cookie ---------------------------------------------------
-function loadCookie(c_name, type='json'){
-	myLogFunc('loadCookie name: '+c_name);
-	var cookie=_extractCookie(toh_prefs.cook_prefix + c_name);
-	myLogStr('result: '+cookie);
-
-	if(cookie){
-		var c_content=decodeURIComponent(cookie);
-		if(type=='json'){
-			return JSON.parse(c_content);
-		}
-		else{
-			return c_content;
-		}
-	}
-	else{
-		return false;
-	}
-}
-
-// Load All Preset Cookies -----------------------------
-function loadPresetCookies(type){ //'features' or 'columns'
-	myLogFunc('loadCookie name: '+type);
-	var c_value;
-
-	for (let i = 1; i <= toh_prefs.cook_preset_count; i++) {
-		c_value=loadCookie(toh_prefs['cook_name_'+type]+i);
-		myLogStr('p'+i+' / '+c_value,4);
-		if(typeof(toh_cookies[type]) !='object'){
-			myLogStr('create type:'+type,4);
-			toh_cookies[type]={};
-		}
-		if(c_value !=undefined || c_value==''){
-			myLogStr('save: '+c_value,4);
-			toh_cookies[type][i]=c_value;
-		}
-		else{
-			myLogStr('create index: '+i,4);
-			toh_cookies[type][i]={};
-		}		
-	}
-	myLogObj(toh_cookies,'result',4);
-}
-
-// Store User Preset in Cookie -----------------------------
-function storePresetCookie(type, number=0, name='user'){ // type= 'features' or 'columns'
-	myLogFunc('storePresetCookie: '+type+', '+number+', '+name);
-	if(name==''){
-		name=number;
-	}
-	var preset={
-		name: name,
-		list: []
-	};
-	if(type=='features'){
-		preset.list=getCheckedFeatures();
-		saveCookie(toh_prefs.cook_name_features+number, preset);
-		toh_cookies[type][number]=preset;
-	}
-	else if(type=='columns'){
-		preset.list=getCheckedColumns();
-		saveCookie(toh_prefs.cook_name_columns+number, preset);
-		toh_cookies[type][number]=preset;
-	}
-	myLogObj(preset.list,'preset.list',4);
-}
-
-// Delete User Preset Cookie --------------------------
-function deletePresetCookie(type, number){
-	if(type=='features'){
-		saveCookie(toh_prefs.cook_name_features+number, false,true);
-	}
-	else if(type=='columns'){
-		saveCookie(toh_prefs.cook_name_columns+number, false,true);
-	}
-}
-
-// Build User Preset Menu -----------------------------
-function buildUserPresets(type){// type= 'features' or 'columns'
-	myLogFunc('buildUserPresets: '+type);
-	var sel;
-	var name;
-	var html='';
-	if(type=='features'){
-		sel="#toh-filters-upresets .toh-upresets-content";
-	}
-	else if(type=='columns'){
-		sel="#toh-cols-upresets .toh-upresets-content";
-	}
-	else{
-		return false;
-	}
-	for (let i = 1; i <= toh_prefs.cook_preset_count; i++) {
-		myLogStr('pr'+i,4);
-		var myclass='';
-		if(typeof(toh_cookies[type][i])=='object'){
-			if(typeof(toh_cookies[type][i].name) =='string'){
-				name=toh_cookies[type][i].name;
-				myclass="toh-used";
-			}
-			else{
-				name=i;
-			}
-		}
-		else{
-			name=+i;
-		}
-		html +='<a href="#" class="toh-upreset-but '+myclass+'" data-key="'+i+'" data-type="'+type+'">'+name+'</a>';
-	}
-	$(sel).html(html);
-}
-
-// Appy a User Preset -----------------------------------------------
-function applyUserPreset(type,num){
-	myLogFunc();
-	var preset=toh_cookies[type][num];
-	if(preset==false){
-		myLogStr('empty preset: '+type+'/'+num,1);
-	}
-	if(type=='features'){
-		setPresetSelectedClass(type,'custom');
-		clearAllFeatures();
-		checkAllFeatures(false);
-	}
-	else if(type=='columns'){
-		setPresetSelectedClass(type,'custom');
-		showAllColumns(false);
-		checkAllColumns(false);
-	}
-	else{
-		return false;
-	}
-	$.each(preset.list,function(i,key){
-		if(type=='features'){
-			checkFeatureAndClearPreset(key,true);
-		}
-		else if(type=='columns'){
-			applyColumCol(key,true);
-		}
-		else{
-			return false;
-		}
-	});
-	if(type=='features'){
-		applyCheckedFeatures();
-	}
-}
-
-// Load Cookies and Build User Preset menu -----------------------------
-function loadCookiesAndBuildUserPresets(){
-	loadPresetCookies('features');
-	loadPresetCookies('columns');
-	buildUserPresets('features');
-	buildUserPresets('columns');
-	$(".toh-upresets-title A").prop('title',toh_prefs.tooltip_upreset);
-	
-}
-
-
-
-
-// Log functions ##############################################################################################################
-
-// custom log String -----------------------------------------------------
-function myLogStr(line=null, level=2, is_title=false) { // levels: 1=info, 2=debug, 3=verbose, 4=full
-
-	if(level > toh_debug_level){
-		return;
-	}
-	const pad_lenght=80;
-	const p='-';
-	if(is_title){
-		line =p+p+" "+ line + " ";
-		line =line.padEnd(pad_lenght,p);
-	}
-	else{
-		line= " - "+line;
-	}
-
-	console.log(line);
-}
-// custom log Function -----------------------------------------------------
-function myLogFunc(custom_title=null,level=3){
-	if(level > toh_debug_level){
-		return;
-	}
-	if(custom_title==null){
-		//custom_title= arguments.callee.caller.name;
-		custom_title=getCallerName();
-	}
-	myLogStr(custom_title,level,true);
-}
-// custom log Object -------------------------------------------------------
-function myLogObj(obj,desc='',level=3) {
-	if(level > toh_debug_level){
-		return;
-	}
-	if(desc.length>0){
-		desc=desc + ": ";
-	}
-
-	console.log(" * "+desc+": ",obj);
-}
-// get the Calling func name
-function getCallerName() {
-	try {
-		throw new Error();
-	} catch (e) {
-		const stack = e.stack.split('\n');
-		// The caller is typically the third item in the stack
-		const callerLine = stack[2];
-		//myLogObj(callerLine,'Stack');
-		// Extract the function name using regex
-		const match = callerLine.match(/(at)?\s*([^@]+)/);
-		//myLogStr('found: '+match[2]);
-		return match ? match[2] : 'anonymous';
-	}
-  }
-
-
-
-
-// Misc functions #############################################################################################################
-
-async function FetchReleases() {
-	try {
-		const versionData = await $.ajax({
-			url: toh_urls.firm_versions,
-			method: 'GET'
-		});
-		const cur_url = toh_urls.firm_releases.replace('VERSION', versionData.stable_version);
-
-		const releaseData = await $.ajax({
-			url: cur_url,
-			method: 'GET'
-		});
-
-		toh_firmwares = releaseData.profiles;
-		toh_firmwares_fetched =true;
-	} 
-	catch (error) {
-		myLogObj(error,'Error fetching releases', 1);
-	}
-}
-
-function GetFirmwareSelectUrl(id, target) {
-	const found= toh_firmwares.some(item => item.id == id && item.target == target);
-	if(found){
-		return toh_urls.firm_select + '?target='+ target + "&id=" + id;
-	}
-	return false;
-}
-
-// Position the Image Preview div -------------------------------
-function positionPreview($link, $container) {
-	var linkOffset = $link.offset();
-	var linkWidth = $link.outerWidth();
-	var linkHeight = $link.outerHeight();
-	var containerWidth = $container.outerWidth();
-	var containerHeight = $container.outerHeight();
-	var windowWidth = $(window).width();
-	var windowHeight = $(window).height();
-	var scrollTop = $('BODY').scrollTop();
-
-	var left = linkOffset.left + linkWidth + 10; // 10px to the right of the link
-	var top = linkOffset.top + scrollTop;
-
-	// Check if the preview would go off the right edge of the window
-	if (left + containerWidth > windowWidth) {
-		left = linkOffset.left - containerWidth - 10; // 10px to the left of the link
-	}
-
-	// Check if the preview would go off the bottom of the viewport
-	if (top + containerHeight > scrollTop + windowHeight) {
-		top = Math.max(scrollTop, top + linkHeight - containerHeight);
-	}
-
-	// Ensure the preview doesn't go above the top of the viewport
-	top = Math.max(scrollTop, top);
-
-	$container.css({
-		left: left,
-		top: top
-	});
-}
-
-// Every picture a cell's image link stands for --------------------
-// The icon carries the whole set, so the lightbox can page through it.
-function imagesOfLink($link){
-	var list=$link.attr('data-images');
-	if(list){
-		return list.split(' ').filter(function(url){ return url.length > 0; });
-	}
-	return [$link.attr('href')];
-}
-
-// Open the Image Lightbox --------------------------------------
-// Takes the whole set of pictures a device has, so the arrows can page
-// through them without going back to the table.
-function OpenImageLightbox(urls, index) {
-	if(typeof urls == 'string'){
-		urls=[urls];
-	}
-	if(!Array.isArray(urls) || urls.length == 0){
-		return;
-	}
-	CloseImageLightbox();
-
-	var current=index > 0 ? index : 0;
-	var many=urls.length > 1;
-	var token=0;	// tells a slow image that the arrows have moved on without it
-
-	var $box = $(
-		'<div id="toh-image-lightbox">' +
-			'<div class="toh-lightbox-border">' +
-				'<div class="toh-lightbox-head">' +
-					'<a class="toh-lightbox-source" target="_blank" rel="noopener" title="Open the image in a new tab"><i class="fa-solid fa-up-right-from-square"></i> Open original</a>' +
-					'<span class="toh-lightbox-counter"></span>' +
-					'<div class="toh-lightbox-close" title="Close (Esc)"><i class="fa-solid fa-circle-xmark"></i></div>' +
-				'</div>' +
-				'<div class="toh-lightbox-body">' +
-					'<button type="button" class="toh-lightbox-nav toh-lightbox-prev" title="Previous picture"><i class="fa-solid fa-chevron-left"></i></button>' +
-					'<div class="toh-lightbox-content"></div>' +
-					'<button type="button" class="toh-lightbox-nav toh-lightbox-next" title="Next picture"><i class="fa-solid fa-chevron-right"></i></button>' +
-				'</div>' +
-			'</div>' +
-		'</div>'
-	);
-	if(!many){
-		$box.find('.toh-lightbox-nav').remove();
-	}
-
-	function showImage(wanted){
-		current=(wanted + urls.length) % urls.length;	// the arrows wrap around
-		var url=urls[current];
-		var mine=++token;
-
-		$box.find('.toh-lightbox-source').attr('href', url);
-		$box.find('.toh-lightbox-counter').text(many ? (current + 1) + ' / ' + urls.length : '');
-		$box.find('.toh-lightbox-content').html('<i class="fa-solid fa-arrows-rotate fa-spin fa-2x"></i>');
-
-		var $img = $('<img>', {alt: 'Device Image'});
-		$img.on('load', function() {
-			if(mine != token){
-				return;
-			}
-			$box.find('.toh-lightbox-content').empty().append($img);
-		});
-		$img.on('error', function() {
-			if(mine != token){
-				return;
-			}
-			// The wiki sits behind an anti-bot challenge that images embedded from
-			// another page cannot answer, so they are served an HTML page instead.
-			// Opening the image as a normal navigation does pass the challenge.
-			var $err = $('<div class="toh-lightbox-error"></div>');
-			$err.append('<div><i class="fa-solid fa-triangle-exclamation"></i> This image could not be loaded from the wiki.</div>');
-			$err.append($('<a target="_blank" rel="noopener">Open it directly on openwrt.org</a>').attr('href', url));
-			$box.find('.toh-lightbox-content').empty().append($err);
-		});
-		$img.attr('src', url);
-	}
-
-	$box.find('.toh-lightbox-prev').on('click', function(e) {
-		e.stopPropagation();
-		showImage(current - 1);
-	});
-	$box.find('.toh-lightbox-next').on('click', function(e) {
-		e.stopPropagation();
-		showImage(current + 1);
-	});
-
-	// close on backdrop click, but not when clicking the image itself
-	$box.on('click', function(e) {
-		if(e.target === this || $(e.target).closest('.toh-lightbox-close').length){
-			CloseImageLightbox();
-		}
-	});
-	$(document).on('keydown.tohlightbox', function(e) {
-		if(e.keyCode == 27){	//esc
-			CloseImageLightbox();
-		}
-		else if(many && e.keyCode == 37){	//left
-			showImage(current - 1);
-		}
-		else if(many && e.keyCode == 39){	//right
-			showImage(current + 1);
-		}
-	});
-
-	$('BODY').append($box);
-	showImage(current);
-}
-
-// Close the Image Lightbox -------------------------------------
-function CloseImageLightbox() {
-	$(document).off('keydown.tohlightbox');
-	$('#toh-image-lightbox').remove();
-}
-
-
-
-var loading_is_running	= false;
-var loading_last_time 		= 0;
-const loading_duration	= 400;
-// Show Loading --------------------------------------------------------
-function showLoading(){
-	myLogFunc();
-	if(!loading_is_running){
-		loading_is_running	=true;
-		loading_last_time	= Date.now();
-		ChangeFavicon('anim');
-		$('#toh-header-loading').show();
-		$('BODY').addClass('toh-loading');
-	}
-}
-// Hide Loading --------------------------------------------------------
-function hideLoading() {
-	myLogFunc();
-	if(loading_is_running){
-		const timeSinceShow = Date.now() - loading_last_time;
-		if (timeSinceShow < loading_duration) {
-			setTimeout(hideLoading, loading_duration - timeSinceShow);
-		}
-		else {
-			ChangeFavicon('trans');
-			$('#toh-header-loading').hide();
-			$('BODY').removeClass('toh-loading');
-			loading_is_running = false;
-		}
-	}
-}
-
-// Change the favicon  --------------------------------------------------
-function ChangeFavicon(type){
-	//myLogStr('START fav='+type,1);
-	var el=$('link[rel=icon]');
-	
-	var icon='static/img/favicon_trans.png';
-	if(type=='anim'){
-		icon='static/img/favicon_anim.gif';
-	}
-
-	if(el.attr('href') == icon ){
-		//myLogStr('fav ALREADY set',1);
-		return;
-	}
-	el.prop('href',icon);
-	return;
-
-	// el.remove(); // Remove the old favicon
-	// el = $('<link>', {
-	// 	rel: 'icon',
-	// 	href: icon
-	// });
-	// $('head').append(el);
-	// el[0].offsetHeight; 
-
-	// Force browser favicon repaint
-	// document.title = document.title + ' '; // Trigger tab repaint
-	// setTimeout(() => document.title = document.title.trim(), 50); // Reset title
-}
-
-
-// Set default Filters & View -------------------------------------------
-function SetDefaults(){
-	myLogFunc();
-
-	//show presets
-	if(toh_prefs.def_show_filters){
-		$(".toh-filters-but-toggle").trigger('click');
-	}
-
-	//show views
-	if(toh_prefs.def_show_views){
-		$(".toh-cols-but-toggle").trigger('click');
-	}
-
-	var tmp_value;
-	var tmp_arr;
-		
-	//columns or columns preset
-	tmp_value=getUrlParameter(toh_prefs.p_columns);
-	if(tmp_value == ''){
-		// set preset
-		tmp_value=getUrlParameterOrDefault(toh_prefs.p_view, toh_prefs.def_view);
-		if(getColumnSet(tmp_value).length == 0){
-			tmp_value=toh_prefs.def_view;
-		}
-		applyColumnPreset(tmp_value);
-	}
-	else{
-		tmp_arr=tmp_value.split(',');
-		$.each(tmp_arr,function(i,key){
-			applyColumCol(key,true);
-		});
-	}
-		
-	//features or filter preset
-	tmp_value=getUrlParameter(toh_prefs.p_features);
-	if(tmp_value == ''){
-		myLogStr('Set Filter Preset',4);
-		// set preset
-		tmp_value=getUrlParameterOrDefault(toh_prefs.p_filter, toh_prefs.def_filter);
-		applyFilterPreset(tmp_value);
-		//myLogStr('DONE',4);
-	}
-	else{
-		myLogStr('Set Filter Features',4);
-		tmp_arr=tmp_value.split(',');
-		$.each(tmp_arr,function(i,key){
-			checkFeatureAndClearPreset(key,true);
-		});
-		applyCheckedFeatures();
-	}
-
-	//header search
-	myLogStr('Set Header Search',4);
-	tmp_value=getUrlParameter(toh_prefs.p_brand);
-	if(tmp_value != ''){
-		$('#toh-search-input-brand').val(tmp_value);
-	}
-	tmp_value=getUrlParameter(toh_prefs.p_model);
-	if(tmp_value != ''){
-		$('#toh-search-input-model').val(tmp_value);
-	}
-
-	//myLogStr('SetDefaults URL',4);
-	buildBrowserUrl();
-	toh_table_inited=true;
-}
-
-// Display filtered / total count ------------------------------------------
-function UpdateCountRows(){
-	var html='';
-	var selected	=tabuTable.getDataCount("active");
-	var total		=tabuTable.getDataCount();
-	if(selected < total){
-		html='<b>'+selected+"</b> / ";
-	}
-	html +="<i>"+total+"</i>";
-	$('.toh-count-rows-full').html(html);
-	
-	//$('.toh-count-rows').html(selected);
-	$('#toh-bot-buttons OPTION[value=all]').html(total + " total");
-	$('#toh-bot-buttons OPTION[value=active]').html(selected + " filtered");
-}
-
-// Display filtered / total count ------------------------------------------
-function UpdateCountCols(){
-	var html='';
-	var selected	=tabuTable.getColumns().filter(col => col.isVisible()).length;
-	var total		=tabuTable.getColumns().length;
-	if(selected < total){
-		html='<b>'+selected+"</b> / ";
-	}
-	html +="<i>"+total+"</i>";
-	$('.toh-count-cols-full').html(html);	
-	//$('.toh-count-cols').html(selected);
-}
-
-// jquery shake effect -----------------------------------------------------
-$.fn.shake = function(interval = 100, distance = 10, times = 3) {
-	this.css('position', 'relative');
-	for (let i = 0; i < times + 1; i++) {
-		this.animate({left: (i % 2 == 0 ? distance : distance * -1)}, interval);
-	}
-	return this.animate({left: 0}, interval);
-};
-
-
-/*
-//create indexed object  ---------------------------------------
-function createIndexedObject(arrayOfObjects, key) {
-	return arrayOfObjects.reduce((acc, obj) => {
-		if (obj.hasOwnProperty(key)) {
-			acc[obj[key]] = obj;
-		}
-		return acc;
-	}, {});
-}
-*/
-// get Vitual Columns ------------------------------------------------------
-function getVirtualColumns() {
-	return Object.entries(toh_colStyles)
-		.filter(([key]) => key.startsWith("VIRT_"))
-		.map(([f, value]) => ({
-			field: f,			// needed to allow col.getDefinition() to work
-			visible: false,     // Hodden by default
-			...value            // Spread existing properties
-		}));
-}
-
-// --Fetch and Display the Changelog ----------------------------------------------------------------
-function FetchAndPrintChangelog(){
-	fetch('CHANGELOG.md')
-    .then(response => response.text())
-    .then(data => {
-        const lines = data.split('\n');
-        const result = [];
-        let currentObject = null;
-        
-        // Process each line
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
-            
-            // Check for subtitle
-            if (line.startsWith('##')) {
-                if (currentObject) {
-                    result.push(currentObject);
-                }
-                currentObject = {
-                    title: line.substring(2).trim(), // Remove '##' and trim
-                    list: ''
-                };
-            }
-            // Check for bullet points if we have a current object
-            else if (currentObject && line.startsWith('*')) {
-                currentObject.list += (currentObject.list ? '\n' : '') + line;
-            }
-        }
-        
-        // Push the last object if it exists
-        if (currentObject) {
-            result.push(currentObject);
-        }
-        
-        if (result.length > 0) {
-    	    // Insert the first result 
-			$('#toh-changelog-latest').html('<div class="toh-changelog-release"><h5>' + result[0].title + ' <span class="badge">v'+ toh_app.version +'</span></h5>' + snarkdown(result[0].list)) +'</div>';
-
-			// then the others results
-			var html='';
-			for (let i = 1; i < result.length; i++) {
-				html +='<div class="toh-changelog-release"><h5>' + result[i].title + '</h5>' + snarkdown(result[i].list) +'</div>';
-            }
-			$('#toh-changelog-previous').html(html);
-
-			$("#toh-changelog").show();
-
-        }
-    })
-    .catch(error => myLogStr('Cannot load CHANGELOG! Error: '+ error));
-}
-
-
-// Table height ---------------------------------------------------------------
-// The container has to hold the column headers, a whole page of rows, the
-// horizontal scrollbar and the footer. All of those move with the font size,
-// the theme and the platform's scrollbar width, so they are measured rather
-// than assumed: the constants they replace were tuned for a smaller font and
-// left the last row of every page clipped once the font grew.
-
-// the height a row really renders at, which wrapping or a zoomed page can push
-// past the configured one
-function getTableRowHeight(){
-	const row = document.querySelector('#toh-table .tabulator-row');
-	const measured = row ? row.getBoundingClientRect().height : 0;
-	return Math.max(measured, tabulatorOptions.rowHeight);
-}
-
-// the content height #toh-table-container needs to show 'size' rows in full
-function getTableHeight(size){
-	const rows = parseInt(size, 10);
-	if(! rows){		// 'true' means "every row": tabulator sizes itself then
-		return null;
-	}
-	const holder	= document.querySelector('#toh-table .tabulator-tableholder');
-	const $header	= $('#toh-table .tabulator-header');
-	const $footer	= $('#toh-table .tabulator-footer');
-	if(! holder || ! $header.length || ! $footer.length){
-		return null;	// table not built yet, the CSS default still applies
-	}
-	// zero where the platform draws overlay scrollbars, ~15px where it does not
-	const h_scroll	= holder.offsetHeight - holder.clientHeight;
-	// 1px of slack so sub-pixel rounding cannot eat into the last row
-	return Math.ceil($header.outerHeight() + $footer.outerHeight() + h_scroll + (getTableRowHeight() * rows)) + 1;
-}
-
-// resizes the container unless it already fits, so calling this from a render
-// event cannot loop
-function setTableHeight(size){
-	const wanted = getTableHeight(size);
-	if(wanted === null){
-		return;
-	}
-	const $container = $('#toh-table-container');
-	if(Math.abs($container.height() - wanted) < 1){
-		return;
-	}
-	myLogStr('Table Set height: ' + wanted + ' (was ' + $container.height() + ')', 2);
-	$container.height(wanted);
-}
-
-
-
-
-
-
-
-
-
-
-
+const toh_table_min_height=360;		// never shrink the table below this, however short the window
+const toh_filters_visible_groups=3;	// filter groups shown before "Show more filters"
 
 
 // ############################################################################################################################
@@ -1473,7 +55,23 @@ $(document).ready(function () {
 	}
 
 	//set title Link URL ----------------------------------------------------
-	$('#toh-header-title H1 A').attr('href',window.location.pathname);
+	// the redesign renamed this; the old selector matched nothing, so clicking
+	// the title did nothing at all
+	$('#toh-appbar-title').attr('href',window.location.pathname);
+
+	// and it should get you out of whatever panel you are in
+	$('#toh-appbar-title').on('click',function(e){
+		if($('#toh-compare-panel, #toh-facet-panel, #toh-adv-panel, #toh-wiz-panel').filter(':visible').length === 0){
+			return;					// already on the table: let the link reload
+		}
+		e.preventDefault();
+		tohBackToTable();
+		tohScrollTop();
+	});
+
+	// the saved row height has to be in tabulatorOptions before the table reads
+	// it, or the first render sizes every row for the wrong density
+	tohApplyDensity(loadCookie(toh_prefs.cook_name_density, 'string') || toh_prefs.def_density, false);
 
 	// initialize table  -----------------------------------------------------
 	tabuTable = new Tabulator("#toh-table", tabulatorOptions);
@@ -1531,19 +129,18 @@ $(document).ready(function () {
 	});
 
 
-	// Observe the DOM to show/hide the loading icon  --------------------------
-	// (because i've not found a Tabulator event to do that, ie when changing a large amount of column visibility)
-	var observer = new MutationObserver(function(mutations) {
-		// Debounce the callback to avoid multiple triggers
+	// Hide the loading icon once the table has finished drawing ---------------
+	// This was a MutationObserver over every childList change under #toh-table,
+	// which records thousands of node insertions per render to drive a debounced
+	// two-line callback. Tabulator's own renderComplete covers the same ground -
+	// including the bulk column-visibility change the observer was added for -
+	// and fires once per render instead of once per node.
+	function tohLoadingDone(){
 		clearTimeout(window.domChangeTimer);
 		window.domChangeTimer = setTimeout(function() {
-			// Trigger a custom event when DOM changes are complete
 			$(document).trigger('table-change-complete');
 		}, 100);
-	});
-
-	// Start observing the document body
-	observer.observe(document.getElementById('toh-table'), { childList: true, subtree: true });
+	}
 
 	// Bind to the custom event
 	$(document).on('table-change-complete', function() {
@@ -1561,51 +158,589 @@ $(document).ready(function () {
 		});
 	});
 
-	//  Click: Toggle Filters Visibility -----------------------------
+	//  Click: Toggle the sidebar Filters section ---------------------
 	$('.toh-filters-but-toggle').on('click',function(e){
 		e.preventDefault();
 		$('#toh-filters-container').toggle();
-		$(this).children('I').toggleClass('fa-caret-right fa-caret-down');
+		$(this).toggleClass('is-open')
+			.attr('aria-expanded', $('#toh-filters-container').is(':visible') ? 'true' : 'false');
 	});
 
-	//  Click: Toggle Views Visibility -------------------------------
+	//  Click: Toggle the Columns toolbar menu -----------------------
 	$('.toh-cols-but-toggle').on('click',function(e){
 		e.preventDefault();
+		e.stopPropagation();
+		closeToolbarMenus('#toh-cols-container');
 		$('#toh-cols-container').toggle();
-		$(this).children('I').toggleClass('fa-caret-right fa-caret-down');
+		$(this).toggleClass('is-open')
+			.attr('aria-expanded', $('#toh-cols-container').is(':visible') ? 'true' : 'false');
+	});
+
+	//  Click: Toggle the Export toolbar menu ------------------------
+	$('.toh-export-but-toggle').on('click',function(e){
+		e.preventDefault();
+		e.stopPropagation();
+		closeToolbarMenus('#toh-bot');
+		$('#toh-bot').toggle();
+		$(this).toggleClass('is-open')
+			.attr('aria-expanded', $('#toh-bot').is(':visible') ? 'true' : 'false');
+	});
+
+	// Only one toolbar menu open at a time; 'except' is the panel being toggled.
+	function closeToolbarMenus(except=''){
+		$('.toh-menu').each(function(){
+			const $panel=$(this).find('.toh-menu-panel');
+			if(except && $panel.is(except)){
+				return;
+			}
+			$panel.hide();
+			$(this).find('.toh-menu-but').removeClass('is-open').attr('aria-expanded','false');
+		});
+	}
+
+	$(document).on('click',function(e){
+		if($(e.target).closest('.toh-menu').length === 0){
+			closeToolbarMenus();
+		}
+	});
+	$(document).on('keydown',function(e){
+		if(e.key === 'Escape'){
+			closeToolbarMenus();
+			tohCloseSidebar();
+		}
+	});
+
+	//  Click: Toggle the sidebar drawer (narrow viewports) ----------
+	$('#toh-sidebar-toggle').on('click',function(e){
+		e.preventDefault();
+		$('body').toggleClass('toh-sidebar-open');
+		$(this).attr('aria-expanded', $('body').hasClass('toh-sidebar-open') ? 'true' : 'false');
+	});
+	$('#toh-sidebar-scrim').on('click',tohCloseSidebar);
+
+	function tohCloseSidebar(){
+		$('body').removeClass('toh-sidebar-open');
+		$('#toh-sidebar-toggle').attr('aria-expanded','false');
+	}
+
+	//  Resize: keep the table inside the viewport -------------------
+	var toh_resize_timer=null;
+	$(window).on('resize',function(){
+		if(!toh_table_inited){
+			return;
+		}
+		clearTimeout(toh_resize_timer);
+		toh_resize_timer=setTimeout(function(){
+			const was_cards=toh_cards_on;
+			tohApplyViewportView();		// may swap the preset, so before the height
+			tohRenderCards();			// crossing 700px swaps the renderer; no-op elsewhere
+			if(was_cards && !toh_cards_on){
+				// Unfolding a phone, or rotating it, crosses back into the table.
+				// Tabulator built itself while CSS had the container hidden, so it
+				// holds no row elements at all - without this the visitor gets a
+				// header, a footer and nothing in between.
+				tabuTable.redraw(true);
+			}
+			setTableHeight($('.tabulator-page-size').val() || tabulatorOptions.paginationSize);
+			if(typeof tohFitTray === 'function'){
+				tohFitTray();			// the tray wraps to a second row below 760px
+			}
+		},150);
+	});
+
+	// Favourites #############################################################################################################
+
+	$('#toh-table').on('click','.toh-fav-toggle',function(e){
+		e.preventDefault();
+		e.stopPropagation();				// the cell click would open the details popup
+		tohFavToggle($(this).attr('data-id'));	// owns the pinned refresh itself
+	});
+	// stopPropagation only - no preventDefault - so these can stay passive and
+	// not hold up the start of a touch scroll over the whole table
+	$('#toh-table').on('mousedown','.toh-fav-toggle',function(e){
+		e.stopPropagation();
+	});
+	document.addEventListener('touchstart', function(e){
+		if(e.target.closest && e.target.closest('.toh-fav-toggle, .toh-compare-check')){
+			e.stopPropagation();
+		}
+	}, {passive: true});
+
+	$('#toh-fav-pin').on('click',function(e){
+		e.preventDefault();
+		if(toh_favorites.length === 0){
+			$('#toh-favorites').shake();
+			return;
+		}
+		toh_favorites_pinned=!toh_favorites_pinned;
+		tohFavSync();
+		applyCheckedFeatures();
+	});
+
+	$('#toh-fav-clear').on('click',function(e){
+		e.preventDefault();
+		tohFavClear();
+	});
+
+
+	// Compare ################################################################################################################
+
+	// tick a device in the table
+	$('#toh-table').on('click','.toh-compare-check',function(e){
+		e.stopPropagation();				// the cell click would open the details popup
+		const id=$(this).attr('data-id');
+		if(!tohCompareToggle(id, $(this).is(':checked'))){
+			$(this).prop('checked', false);
+			$('#toh-compare-tray').shake();
+		}
+	});
+	// the checkbox sits in a cell that opens the popup on click
+	$('#toh-table').on('mousedown','.toh-compare-check',function(e){
+		e.stopPropagation();
+	});
+
+	// drop one from the tray
+	$('#toh-compare-chips').on('click','.toh-compare-drop',function(e){
+		e.preventDefault();
+		tohCompareToggle($(this).attr('data-id'), false);
+	});
+
+	$('#toh-compare-reset').on('click',function(e){
+		e.preventDefault();
+		tohCompareClear();
+	});
+	// a device header in the comparison opens its full details, so a comparison
+	// is a step on the way in rather than a dead end
+	$('#toh-compare-body').on('click','.js-compare-details',function(){
+		tohSheetOpen($(this).attr('data-id'));
+	});
+	$('#toh-compare-open').on('click',function(e){
+		e.preventDefault();
+		tohOpenCompare();
+	});
+	$('#toh-compare-close').on('click',function(e){
+		e.preventDefault();
+		tohCloseCompare();
+	});
+
+	// only rows that differ - the point when comparing two near-identical revisions
+	$('#toh-compare-diffonly').on('change',function(){
+		tohBuildCompare();
+	});
+
+
+	// Advanced search ########################################################################################################
+
+	$('#toh-adv-open').on('click',function(e){
+		e.preventDefault();
+		// the same button closes it again
+		if($('#toh-adv-panel').hasClass('toh-hidden')){
+			tohOpenAdvSearch();
+		}
+		else{
+			tohCloseAdvSearch();
+		}
+	});
+
+	// Sticky summary row #####################################################################################################
+
+	// Show it once the hero has gone. An observer on the hero rather than a
+	// scroll handler, so nothing runs on the frames in between.
+	(function(){
+		const hero=document.getElementById('toh-hero');
+		if(!hero || !window.IntersectionObserver){
+			return;
+		}
+		new IntersectionObserver(function(entries){
+			// the hero is only ever "not intersecting" downwards here, because it
+			// is the first thing on the page
+			$('body').toggleClass('toh-summary-on', !entries[0].isIntersecting);
+		},{threshold:0}).observe(hero);
+	})();
+
+	// the magnifier goes back to the search rather than only to the top
+	$('#toh-summary-back').on('click',function(e){
+		e.preventDefault();
+		tohScrollTop();				// BODY is the scroll container, not the window
+		$('#toh-search-input-model').trigger('focus');
+	});
+
+	// dropping one search term, leaving the other and the filters alone
+	$('#toh-summary-chips').on('click','.toh-summary-chip-drop',function(e){
+		e.preventDefault();
+		const field=$(this).attr('data-field');
+		$('#toh-search-input-'+field).val('').trigger('keyup');
+	});
+
+	// the filters chip opens the rail, wherever the rail currently lives
+	$('#toh-summary-chips').on('click','.toh-summary-chip-filters',function(e){
+		e.preventDefault();
+		if($('#toh-sidebar-toggle').is(':visible')){
+			$('body').addClass('toh-sidebar-open');
+			$('#toh-sidebar-toggle').attr('aria-expanded','true');
+		}
+		if($('#toh-filters-container').hasClass('toh-hidden')){
+			$(".toh-filters-but-toggle").trigger('click');
+		}
+		document.getElementById('toh-sidebar').scrollIntoView({block:'start', behavior:'smooth'});
+	});
+
+	// Advanced: the hero button already owns this, so defer to it
+	$('#toh-summary-adv').on('click',function(e){
+		e.preventDefault();
+		$('#toh-adv-open').trigger('click');
+	});
+
+	// Row density ############################################################################################################
+
+	$('#toh-density').on('click','.toh-density-but',function(e){
+		e.preventDefault();
+		tohApplyDensity($(this).attr('data-density'));
+	});
+
+	// Cards : the phone renderer #############################################################################################
+
+	$('#toh-cards-list').on('click','.toh-card-details',function(){
+		tohSheetOpen($(this).closest('.toh-card-dev').attr('data-id'));
+	});
+	$('#toh-cards-list').on('click','.toh-card-fav',function(){
+		tohFavToggle($(this).closest('.toh-card-dev').attr('data-id'));
+	});
+	$('#toh-cards-list').on('click','.toh-card-cmp',function(){
+		// despite the name it is a setter, not a toggle: the wanted state has to
+		// be worked out here, the way the row checkbox passes its own
+		const id=$(this).closest('.toh-card-dev').attr('data-id');
+		if(!tohCompareToggle(id, !tohCompareHas(id))){
+			// the row checkbox says so too; a tap that does nothing at all reads
+			// as a broken page, and there is no hover here to explain it
+			$('#toh-compare-tray').shake();
+		}
+	});
+
+	// paging through Tabulator, so the table and the cards are never on
+	// different pages of the same result set
+	$('#toh-cards-prev').on('click',function(){
+		tabuTable.previousPage().catch(() => {});
+	});
+	$('#toh-cards-next').on('click',function(){
+		tabuTable.nextPage().catch(() => {});
+	});
+
+	$('#toh-sheet-close, #toh-sheet-scrim').on('click',function(){
+		tohSheetClose();
+	});
+	$(document).on('keydown',function(e){
+		if(e.key === 'Escape'){
+			tohSheetClose();
+		}
+	});
+
+	// (cards re-render on resize inside the debounced handler above: a second,
+	// undebounced listener rebuilt thirty cards on every resize event)
+	$('#toh-adv-close').on('click',function(e){
+		e.preventDefault();
+		tohCloseAdvSearch();
+	});
+	$('#toh-adv-apply').on('click',function(e){
+		e.preventDefault();
+		tohAdvApply();
+	});
+	$('#toh-adv-body').on('change','.toh-adv-check',function(){
+		tohAdvSync();
+	});
+	$('#toh-adv-body').on('change','.toh-adv-select',function(){
+		const v=parseInt($(this).val(),10);
+		toh_adv_nums[$(this).attr('data-key')]=isNaN(v) ? 0 : v;
+		tohAdvSync();
+	});
+
+
+	// Configurator ###########################################################################################################
+
+	$('#toh-wiz-open').on('click',function(e){
+		e.preventDefault();
+		if($('#toh-wiz-panel').hasClass('toh-hidden')){
+			tohOpenWizard();
+		}
+		else{
+			tohCloseWizard();
+		}
+	});
+	$('#toh-wiz-close').on('click',function(e){
+		e.preventDefault();
+		tohCloseWizard();
+	});
+	$('#toh-wiz-body').on('click','.toh-wiz-option',function(e){
+		e.preventDefault();
+		const step=toh_wizard[toh_wizard_at];
+		toh_wizard_answers[step.key]=parseInt($(this).attr('data-index'),10);
+		tohBuildWizard();
+	});
+	$('#toh-wiz-back').on('click',function(e){
+		e.preventDefault();
+		if(toh_wizard_at > 0){
+			toh_wizard_at--;
+			tohBuildWizard();
+		}
+	});
+	$('#toh-wiz-next').on('click',function(e){
+		e.preventDefault();
+		if(toh_wizard_at < toh_wizard.length - 1){
+			toh_wizard_at++;
+			tohBuildWizard();
+		}
+		else{
+			tohWizardApply();
+		}
+	});
+
+	// Click: explain the numbered preset slots -------------------
+	// Two of these now - one over the filter slots, one over the column slots -
+	// so the handlers work off the class and find their own hint through
+	// aria-controls rather than each knowing an id.
+	function tohHintFor($help){
+		return $('#' + $help.attr('aria-controls'));
+	}
+	function tohSetHint($help, open){
+		tohHintFor($help).toggleClass('toh-hidden', !open);
+		$help.toggleClass('is-open', open).attr('aria-expanded', open ? 'true' : 'false');
+	}
+	function tohCloseHints(){
+		$('.toh-upresets-help').each(function(){
+			tohHintFor($(this)).data('pinned', false);
+			tohSetHint($(this), false);
+		});
+	}
+	// Hover opens it, so by the time a click arrives it is already showing:
+	// the click pins it rather than toggling it shut again.
+	$('.toh-upresets-help').on('click',function(e){
+		e.preventDefault();
+		e.stopPropagation();
+		const $help=$(this);
+		const $hint=tohHintFor($help);
+		const pinned=!!$hint.data('pinned');
+		$hint.data('pinned', !pinned);
+		tohSetHint($help, !pinned);
+	});
+	// hovering is what most people try first; clicking pins it open
+	$('.toh-upresets-help').on('mouseenter',function(){
+		tohSetHint($(this), true);
+	});
+	$('.toh-upresets-title').on('mouseleave',function(){
+		const $help=$(this).find('.toh-upresets-help');
+		if($help.length && !tohHintFor($help).data('pinned')){
+			tohSetHint($help, false);
+		}
+	});
+	$('.toh-hint').on('mouseleave',function(){
+		if(!$(this).data('pinned')){
+			const $help=$('.toh-upresets-help[aria-controls="'+this.id+'"]');
+			if($help.length){ tohSetHint($help, false); }
+		}
+	});
+	// ... and closes the way everything else does
+	$(document).on('click',function(e){
+		if($(e.target).closest('.toh-hint, .toh-upresets-help').length === 0){
+			tohCloseHints();
+		}
+	});
+	$(document).on('keydown',function(e){
+		if(e.key === 'Escape'){
+			tohCloseHints();
+		}
+	});
+
+
+	// Collections ############################################################################################################
+
+	$('#toh-collections-list').on('click','.toh-collection',function(e){
+		e.preventDefault();
+		tohApplyCollection(parseInt($(this).attr('data-index'),10));
+	});
+
+
+	// Statistics #############################################################################################################
+
+	$('#toh-stats-open').on('click',function(e){
+		e.preventDefault();
+		tohOpenStats();
+	});
+
+
+	// Manufacturer / chipset pages ###########################################################################################
+
+	// Anything marked js-toh-facet opens one, wherever it lives - including
+	// inside the details popup, which is why this listens in the capture phase:
+	// Tabulator stops the click bubbling out of its popup, so a delegated
+	// jQuery handler on document never saw it.
+	document.addEventListener('click', function(e){
+		const el=e.target.closest ? e.target.closest('.js-toh-facet') : null;
+		if(!el){
+			return;
+		}
+		e.preventDefault();
+		e.stopPropagation();
+		tohCloseDevice();				// leave the popup - or the phone sheet - behind
+		tohOpenFacet(el.getAttribute('data-type'), el.getAttribute('data-value'));
+	}, true);
+
+
+	// Some header filters take a shaped value, not a bare string. The flashmb
+	// editor stores {minimum, search} and HeaderFilterFuncFlash, the URL restore
+	// and the saved presets all read that shape (toh_table.js:1036). Handing it a
+	// plain string made every control that routes through here - eight statistics
+	// bars and the "at least this much" chip in every device popup - match no row
+	// at all, and leave an empty table with no filter visible to clear.
+	function tohHeaderFilterValue(field, value){
+		if(field === 'flashmb'){
+			const v=String(value === null || value === undefined ? '' : value).trim();
+			return /^\d+$/.test(v) ? {minimum: v, search: ''} : {minimum: '', search: v};
+		}
+		return value;
+	}
+
+	// a statistics bar that filters the table by one column value
+	document.addEventListener('click', function(e){
+		const el=e.target.closest ? e.target.closest('.js-toh-column') : null;
+		if(!el){
+			return;
+		}
+		e.preventDefault();
+		e.stopPropagation();
+		tohBackToTable();
+		const field=el.getAttribute('data-field');
+		tabuTable.setHeaderFilterValue(field, tohHeaderFilterValue(field, el.getAttribute('data-value')));
+		tabuTable.refreshFilter();
+		tohScrollTop();
+	}, true);
+
+	// "at least this much" - the quantity chips in the details popup
+	document.addEventListener('click', function(e){
+		const el=e.target.closest ? e.target.closest('.js-toh-atleast') : null;
+		if(!el){
+			return;
+		}
+		e.preventDefault();
+		e.stopPropagation();
+		// the sheet's own close button is display:none on a phone, so triggering
+		// it left the sheet covering the page while the work happened behind it
+		tohCloseDevice();
+		tohBackToTable();
+		const field=el.getAttribute('data-field');
+		tabuTable.setHeaderFilterValue(field, tohHeaderFilterValue(field, el.getAttribute('data-value')));
+		tabuTable.refreshFilter();
+		tohScrollTop();
+	}, true);
+
+	$('#toh-facet-close').on('click',function(e){
+		e.preventDefault();
+		tohCloseFacet();
+	});
+
+	$('#toh-facet-body').on('click','.toh-facet-showall',function(e){
+		e.preventDefault();
+		$('#toh-facet-panel').addClass('show-all-devices');
+		$(this).remove();
+	});
+	// judge every device against the first one
+	$('#toh-compare-ref').on('change',function(){
+		tohBuildCompare();
+	});
+
+
+	//  Back and forward move between devices ----------------------
+	$(window).on('popstate',function(){
+		tohDevicePopState();
+		tohComparePopState();
+		tohViewPopState();
+	});
+
+	//  Click: Toggle light / dark ----------------------------------
+	// The initial value is applied by the inline script in index.html; here we
+	// only flip it and remember the choice.
+	$('#toh-theme-toggle').on('click',function(e){
+		e.preventDefault();
+		const dark=document.documentElement.getAttribute('data-theme') === 'dark';
+		const next=dark ? 'light' : 'dark';
+		document.documentElement.setAttribute('data-theme', next);
+		try { localStorage.setItem('toh_theme', next); } catch(err) {}
+		// No redraw: every token the dark theme overrides is a colour or a
+		// shadow, so no row metric changes and Tabulator has nothing to recompute.
 	});
 
 	// Fetch content and build table ----------------------------------
+	// The two run side by side rather than in a chain: the release data only
+	// decorates the download column, and every one of its readers already
+	// guards on toh_firmwares_fetched, so making the 4MB device list wait on
+	// two round trips to another host bought nothing.
 	$('#toh-load-text').html('Fetching TOH devices...');
-	FetchReleases().then(() => {
-		$.getJSON( toh_urls.toh_json, function( data ){ 
+	Promise.all([
+		FetchReleases(),
+		(window.__tohData || $.getJSON(toh_urls.toh_json))
+	]).then(function(results){
+		const data=results[1];
+		{
 			//Makes columns
 			var columns = data.columns.map((value, index) => ({
 				field: value,
 				title: data.captions[index],
 				visible: false,
+				// Tabulator JSON.stringifies anything that is not a scalar, so an
+				// array cell reached the CSV as the literal ["16"] - 2,994 of 3,015
+				// Flash cells, and 21 of 76 columns in the full view. A spreadsheet
+				// cannot sort or sum that. tohArrayText is the rule the cell uses.
+				accessorDownload: tohDownloadValue,
 				...toh_colStyles[value]
 			}));
 
-			// add vitual (not linked to existing fields) columns 
+			// add vitual (not linked to existing fields) columns
 			var virtualColumns = getVirtualColumns();
 			columns=[...columns, ...virtualColumns];
+
+			// page header figures
+			UpdatePageStats(data);
+
+			// read before SetDefaults() rewrites the address bar
+			tohCompareReadUrl();
+			tohDeviceReadUrl();
+			// and before the rows render, or every heart draws empty
+			tohFavLoad();
+			toh_facet_pending=tohFacetReadUrl();
+
+			// Rows as objects, keyed by field name.
+			// data.entries is an array of arrays, which Tabulator maps onto the
+			// column definitions BY POSITION - which is why the column order
+			// could not be changed until after setData(), and why the columns
+			// had to be built twice. Naming the fields here breaks that coupling:
+			// order becomes a display concern, one setColumns() does the job, and
+			// ~1.4s of a mid-range phone's boot goes with the second one.
+			const fields=data.columns;
+			const rows=new Array(data.entries.length);
+			for(let i=0; i<data.entries.length; i++){
+				const src=data.entries[i];
+				const obj={};
+				for(let j=0; j<fields.length; j++){
+					obj[fields[j]]=src[j];
+				}
+				rows[i]=obj;
+			}
+
+			// safe now: the rows name their own fields
+			columns.sort((a, b) => {
+				const indexA = columnOrder.indexOf(a.field);
+				const indexB = columnOrder.indexOf(b.field);
+				if (indexA === -1 && indexB === -1) return 0; // Both names not in order, keep original order
+				if (indexA === -1) return 1; // a's name not in order, move to end
+				if (indexB === -1) return -1; // b's name not in order, move to end
+				return indexA - indexB;
+			});
 
 			//init table with data
 			showLoading();
 			tabuTable.setColumns(columns);
-			tabuTable.setData(data.entries).then(() =>{
-				// order columns			
-				columns.sort((a, b) => {
-					const indexA = columnOrder.indexOf(a.field);
-					const indexB = columnOrder.indexOf(b.field);
-					if (indexA === -1 && indexB === -1) return 0; // Both names not in order, keep original order
-					if (indexA === -1) return 1; // a's name not in order, move to end
-					if (indexB === -1) return -1; // b's name not in order, move to end
-					return indexA - indexB;
-				});
-				tabuTable.setColumns(columns);
-		
+			tabuTable.setData(rows).then(() =>{
+				tohRowsInvalidate();		// the cached row list belongs to the old data
+
 				// display Filters & views 
 				buildFiltersPresets();
 				buildFiltersFeatures();
@@ -1627,12 +762,59 @@ $(document).ready(function () {
 				if(toh_prefs.boot_hide){
 					$('#toh-boot-overlay').slideUp(500);
 				}
-				
+				// the header is only measurable once the columns have rendered,
+				// and the rows only once they have been laid out
+				setTableHeight(tabulatorOptions.paginationSize);
+				requestAnimationFrame(() => setTableHeight(tabulatorOptions.paginationSize));
+
+				tohFavInit();
+				// The per-filter counts and the shortlists are worth having but
+				// nobody is waiting on them, and together they walk the whole
+				// dataset - over a second on a phone, in the very task that
+				// uncovers the page. Let the first frame land first.
+				tohWhenIdle(function(){
+					tohShowFilterCounts();
+					tohBuildCollections();
+				});
+				tohCompareApply();
+				tohDeviceApply();
+				if(toh_facet_pending){
+					if(toh_facet_pending.type === 'stats'){
+						tohOpenStats(false);
+					}
+					else{
+						tohOpenFacet(toh_facet_pending.type, toh_facet_pending.value, false);
+					}
+					toh_facet_pending=null;
+				}
 				InitHeaderSearch();
 				PreLoadImagesCache();
-			});   
-		});
+			});
+		}
+	}).catch(function(err){
+		// openwrt.org rate-limits this endpoint, and a phone loses its
+		// connection mid-download often enough. Without this the visitor sits
+		// on an animating spinner forever, unable to tell slow from broken.
+		myLogStr('Could not load the device list: ' + err, 1);
+		tohBootFailed(err);
 	});
+
+	// Boot could not finish: say so, and offer the only useful action --------
+	function tohBootFailed(err){
+		const status=(err && (err.status || (err.jqXHR && err.jqXHR.status))) || 0;
+		const rated=status === 429 || status === 503;
+		$('#toh-boot-icon').hide();
+		$('#toh-load-text').html(
+			'<b>Could not load the device list.</b><br>'
+			+ (rated
+				? 'openwrt.org is busy or rate-limiting right now.'
+				: 'The download from openwrt.org did not complete.')
+			+ '<br><button type="button" id="toh-boot-retry" class="toh-but">Try again</button>'
+		);
+		$('#toh-boot-retry').on('click',function(){
+			window.location.reload();
+		});
+	}
 
 
 
@@ -1651,11 +833,7 @@ $(document).ready(function () {
 
 
 
-	// Header Search ##########################################################################################################
-
-	$('#toh-search-icon I').on('click', function(e){
-		$('#toh-search').toggleClass('toh-hidden');
-	});
+	// Toolbar Search #########################################################################################################
 
 	// Function to toggle clear button visibility
 	function toggleSearchClearButton(field) {
@@ -1676,8 +854,11 @@ $(document).ready(function () {
 	});
 	
 	
-	// input search on keyup
-	$('.toh-search-input').on('keyup', function() {
+	// input search.
+	// 'input' as well as 'keyup': a phone keyboard's own suggestion, dictation
+	// and a paste all change the value without ever sending a key event.
+	// The 300ms debounce below swallows the duplicate the two events make.
+	$('.toh-search-input').on('keyup input', function() {
 		const field=$(this).attr('data-field');
 		toggleSearchClearButton(field);
 
@@ -1685,11 +866,10 @@ $(document).ready(function () {
 		if (this.timeoutId) {
 			clearTimeout(this.timeoutId);
 		}
-		
+
 		// Set new timeout
 		this.timeoutId = setTimeout(() => {
 			tabuTable.setHeaderFilterValue(field,$(this).val());
-			tabuTable.refreshFilter();
 			buildBrowserUrl();
 		}, 300);
 
@@ -1752,7 +932,11 @@ $(document).ready(function () {
 		var num=$preset.attr('data-key');
 		var type=$preset.attr('data-type');
 		myLogFunc("Click user preset:"+type+' / '+num);
-		if(e.shiftKey){
+		// An empty slot has nothing to load, so a plain click on one used to do
+		// nothing at all. Treat it as "save into this slot", which is the only
+		// thing it can usefully mean.
+		const isEmpty=!$preset.hasClass('toh-used');
+		if(e.shiftKey || (isEmpty && !e.altKey)){
 			myLogStr('save');
 			var name="user"+num;
 
@@ -1871,7 +1055,11 @@ $(document).ready(function () {
 		myLogFunc("on Click filter preset");
 		e.preventDefault();
 		var key=$(this).attr('data-key');
-		//setPresetSelectedClass('features',key);
+		// a second click on the one that is on clears it again
+		if($(this).hasClass('toh-selected')){
+			tohClearFilterPreset();
+			return;
+		}
 		applyFilterPreset(key);
 	});
 
@@ -1882,12 +1070,19 @@ $(document).ready(function () {
 		//setPresetSelectedClass('features');
 		checkFeatureAndClearPreset(key, $(this).is(":checked") );
 		applyCheckedFeatures();
+		updateFilterGroupState();
 	});
 
 	// Click: Feature link ----------------------
 	$('#toh-top-filters').on('click','.toh-filter-title A',function(e){
 		e.preventDefault();
 		$(this).parent().find('INPUT').trigger('click');
+	});
+
+	// Click: Show / hide the less used filter groups ----------------
+	$('#toh-top-filters').on('click','.toh-filters-more',function(e){
+		e.preventDefault();
+		$('#toh-filters-features-content').toggleClass('show-all');
 	});
 
 	// Click: Replace Option immediately populates columns ----------------------
@@ -1913,6 +1108,7 @@ $(document).ready(function () {
 			$(".toh-cols-but-toggle").trigger('click');
 		}
 		else{
+			toh_view_chosen=true;	// chosen by hand: resizing no longer overrides it
 			applyColumnPreset(view);
 		}
 	});
@@ -1921,7 +1117,7 @@ $(document).ready(function () {
 	$('#toh-cols-columns-content').on('click viewchanged','INPUT',function(e){
 		var key=$(this).attr('data-key');
 		myLogFunc('on Click Checkbox Col: '+key);
-		//setPresetSelectedClass('columns','custom');
+		toh_current_view=null;			// hand-picked columns are no longer a named view
 		applyColumCol(key, $(this).is(":checked") );
 	});
 
@@ -1955,6 +1151,13 @@ $(document).ready(function () {
 
 	// Top Buttons ############################################################################################################
 
+	// Toolbar buttons are shown/hidden with a class, not with .show()/.hide():
+	// jQuery would set display:block and break the inline-flex that keeps them
+	// aligned with the Columns and Export buttons next to them.
+	function toggleBut($but, visible){
+		$but.toggleClass('toh-but-shown', !!visible);
+	}
+
 	// -------------------------------------------
 	function toggleFilterClearButVisibility(){
 		myLogFunc();
@@ -1966,42 +1169,22 @@ $(document).ready(function () {
 
 		// filters
 		var cur_filters		=tabuTable.getFilters();
-		if(cur_filters.length==0){
-			$but_clear_filt.hide();
-			$div_filters_title.removeClass('active');
-		}
-		else{
-			$but_clear_filt.show();
-			$div_filters_title.removeClass('active').addClass('active');
-		}
+		toggleBut($but_clear_filt, cur_filters.length>0);
+		$div_filters_title.toggleClass('active', cur_filters.length>0);
+
 		// header filters
 		var cur_headfilters	=tabuTable.getHeaderFilters();
-		if(cur_headfilters.length==0){
-			$but_clear_head.hide();
-		}
-		else{
-			$but_clear_head.show();
-		}
+		toggleBut($but_clear_head, cur_headfilters.length>0);
+
 		// ALL filters
-		if(cur_filters.length>0 && cur_headfilters.length>0 ){
-			$but_clear_all.show();
-		}
-		else{
-			$but_clear_all.hide();
-		}
+		toggleBut($but_clear_all, cur_filters.length>0 && cur_headfilters.length>0);
 	}
 
 	// -------------------------------------------
 	function toggleSortClearButVisibility(){
 		myLogFunc();
-		var $but_clear_sort	=$('.toh-but-clearheadersorts');
 		myLogObj(tabuTable.getSorters(), 'tabu Sorters');
-		if(tabuTable.getSorters().length>0 ){
-			$but_clear_sort.show();
-		}
-		else{
-			$but_clear_sort.hide();
-		}		
+		toggleBut($('.toh-but-clearheadersorts'), tabuTable.getSorters().length>0);
 	}
 
 	// Click: clear header sorts ----------------
@@ -2015,9 +1198,11 @@ $(document).ready(function () {
 	$(".toh-but-clearfilters").on('click', function (e) {
 		myLogFunc('on Click But ClearFilters');
 		e.preventDefault();
+		tohResetThresholds();
 		tabuTable.clearFilter();
 		checkAllFeatures(false);
 		setPresetSelectedClass('features','custom');
+		updateFilterGroupState();		// or the rail keeps showing them as on
 		buildBrowserUrl();	
 	});
 
@@ -2025,8 +1210,12 @@ $(document).ready(function () {
 	$(".toh-but-clearheaderfilters").on('click', function (e) {
 		myLogFunc('on Click But ClearHeaderFilters');
 		e.preventDefault();
-		tabuTable.clearHeaderFilter();
+		// Empty the boxes first. clearHeaderFilter() triggers the summary refresh,
+		// which reads those inputs - clearing them afterwards left the sticky bar
+		// still showing a "Device / omnia" chip and its Clear button over a table
+		// that was already back to 3,015 rows.
 		clearHeaderSearch();
+		tabuTable.clearHeaderFilter();
 		buildBrowserUrl();
 	});
 
@@ -2034,11 +1223,13 @@ $(document).ready(function () {
 	$(".toh-but-clearallfilters").on('click', function (e) {
 		myLogFunc('on Click But ClearAllFilters');
 		e.preventDefault();
+		tohResetThresholds();
 		tabuTable.clearHeaderFilter();
 		clearHeaderSearch();
 		tabuTable.clearFilter();
 		checkAllFeatures(false);
 		setPresetSelectedClass('features','custom');
+		updateFilterGroupState();		// or the rail keeps showing them as on
 		buildBrowserUrl();	
 	});
 
@@ -2060,9 +1251,6 @@ $(document).ready(function () {
 		const dl_types = {
 			csv: {
 				ext: 'csv',
-			},
-			xlsx: {
-				ext: 'xlsx',
 			},
 			json: {
 				ext: 'json',
@@ -2155,6 +1343,14 @@ $(document).ready(function () {
 		applyColumnsFromFilters();
 		setColumHeaderColors();
 		toggleFilterClearButVisibility();
+		// The phone card list is drawn from renderComplete, which never fires
+		// below 700px because the table container is display:none and has no
+		// height. Without this the cards sat a whole state behind the filters -
+		// pager still claiming 3,015 devices while the table knew it was 136.
+		// Deferred a task: at this point getRows('active') is still the old set.
+		if(toh_cards_on){
+			setTimeout(tohRenderCards, 0);
+		}
 		if(toh_table_inited){
 			buildBrowserUrl();
 		}
@@ -2165,15 +1361,18 @@ $(document).ready(function () {
 	// Update the counter when 'dataFiltered' event is REALLY finished --------------------
 	tabuTable.on("renderComplete", function(){
 		myLogStr('EVENT: table-change-complete', 4);
+		tohLoadingDone();
 		UpdateCountRows();
 		UpdateCountCols();
 		// also catches the first render, a window resize and a late web font
 		setTableHeight(tabuTable.getPageSize());
+		tohRenderCards();		// no-op unless the phone renderer is the one showing
 	});
 
 	// Resfresh column color on header-filter INPUT' blur ---------------------------------
 	tabuTable.on("columnVisibilityChanged", function(column, visible){
 		myLogStr('EVENT: columnVisibilityChanged', 4);
+		tohLoadingDone();		// hiding every column redraws nothing to render
 		if(toh_table_inited){
 			buildBrowserUrl();
 		}
@@ -2183,6 +1382,7 @@ $(document).ready(function () {
 	tabuTable.on("dataSorted", function(sorters, rows){
 		myLogStr('EVENT: dataSorted', 4);
 		toggleSortClearButVisibility();
+		tohRenderCards();
 	});
 	
 	// Overrides Tabulator pageSizeChange ----------------------------------------------------
@@ -2225,6 +1425,7 @@ $(document).ready(function () {
 			myLogStr('Tabulator REDRAW HACK - Changing Height from: '+cur_table_height+' to: '+last_table_height,1);
 			tabuTable.redraw();
 		}
+		tohRenderCards();
 	});
 
 
@@ -2233,7 +1434,7 @@ $(document).ready(function () {
 	// insert spinner icon div
 	tabuTable.on("tableBuilt", function(){
 		myLogStr('EVENT: tableBuilt');
-		$('.tabulator-paginator LABEL').before('<span class="'+toh_loading_class+'" toh-hidden"><i class="fa-solid fa-arrows-rotate fa-spin"></i> </span>');
+		$('.tabulator-paginator LABEL').before('<span class="'+toh_loading_class+'">'+tohIcon('loader-circle toh-ico-spin')+' </span>');
 	});	
 
 	// Intercept click in capture phase
@@ -2278,617 +1479,3 @@ $(document).ready(function () {
 
 
 });
-
-
-
-
-
-
-
-// ############################################################################################################################
-// Tabulator Callbacks function ###############################################################################################
-// ############################################################################################################################
-
-
-// Format Tabulator Rows -----------------------------------------------------------
-function tabuRowFormatter(row){
-	var data = row.getData();
-	if(data.brand === "OpenWrt"){
-		row.getElement().classList.add("brand-owrt");
-	}
-}
-
-
-
-// Tabulator: Cell Popup Formatters ###########################################################################################
-function CellPopupModel(e, cell, onRendered) {
-	// Build initial popup HTML structure with brand and model title
-	var data = cell.getData();
-	var contents = "<div class='toh-details-border'>" +
-		"<div class='toh-details-head'>" +
-			"<b class='toth-details-title'>" + data.brand + " - " + data.model + "</b>" +
-			"<div class='toh-details-close'><i class='fa fa-solid fa-circle-xmark'></i></div>" +
-		"</div>" +
-		"<div class='toh-details-content'>";
-
-	// Map column fields to their definitions for quick lookup
-	var columns = cell.getTable().getColumns();
-	var columnMap = {};
-	columns.forEach(col => columnMap[col.getField()] = col);
-
-	// Iterate through column groups, excluding 'base'
-	const { base, ...myColGroups } = toh_colGroups;
-	$.each(myColGroups, function(key, obj) {
-		var done = false;
-		$.each(obj.fields, function(f, field) {
-			// Get column definition and raw value
-			var col = getMyColumnDefinition(field);
-			var value = data[field];
-			var formatter = (columnMap[field] || { getDefinition: () => col }).getDefinition().formatter || ((cell) => cell.getValue());
-
-			// add label
-			var mycol=JSON.parse(JSON.stringify(col)); //object deep copy
-			if(mycol.formatterParams){
-				mycol.formatterParams.label = mycol.formatterParams.ttip;
-				mycol.formatterParams.short =true;
-			}	
-
-			// Apply formatter (assumes custom formatters; built-ins need lookupFormatter)
-			var formattedValue = typeof formatter === "function" ?
-				formatter({
-					getValue: () => value,
-					getField: () => field,
-					getRow: () => cell.getRow(),
-					getColumn: () => columnMap[field],
-					getElement: () => document.createElement("div")
-				}, mycol.formatterParams) :
-				value;
-
-			// Convert to string, skip if empty or null
-			formattedValue = formattedValue instanceof Node ? formattedValue.outerHTML : String(formattedValue);
-			
-			// exclude empty fields
-			if (!formattedValue || formattedValue === 'null' || formattedValue === '-' || isGenerigImage(value) ) return true;
-
-			if (!done) {
-				contents += "<div class='toh-details-group'>\n<div class='toh-details-title'>" + obj.name + "</div>\n<table class='toh-details-table'>";
-				done = true;
-			}
-			contents += '<tr><td class="toh-details-key"><a href="#" title="'+ col.headerTooltip +'">' + col.title + "</a></td><td class='toh-details-value'>" + formattedValue + "</td></tr>";
-		});
-		if (done) contents += "</table>\n</div>";
-	});
-
-	contents += "</div></div><div class='toh-details-bottom'></div>";
-
-	// Create popup element
-	var popup = document.createElement("div");
-	popup.className = "toh-details-container";
-	popup.innerHTML = contents;
-	popup.style.opacity = 0;
-	
-	// make left
-	const windowTopPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-	let leftMargin=246;	// 46;	
-	if(window.innerWidth < 500){
-		 leftMargin=7;
-	}
-	else if (window.innerWidth < 840){
-		 leftMargin=146;
-	}
-	var leftPosition = Math.min(leftMargin, window.innerWidth - popup.offsetWidth - 10);
-	popup.style.left = leftPosition + "px";
-
-	// Get the row element to manage its class
-	var row = cell.getRow();
-	var rowElement = row.getElement();
-
-	// Position popup after rendering
-	onRendered(() => {
-		setTimeout(() => {
-			//Add class to the row when popup is shown
-			rowElement.classList.add("popup-active");
-			popup.style.left = leftPosition + "px";
-
-			popup.style.right = "auto";
-			//popup.style.top = e.clientY + "px";
-			popup.style.top =(windowTopPosition +20)+'px';
-			popup.style.opacity = 1;
-
-			// Close button handler
-			popup.querySelector(".toh-details-close").addEventListener("click", () => {
-				if (popup.parentNode) popup.parentNode.removeChild(popup);
-				rowElement.classList.remove("popup-active");			});
-		}, 0);
-	});
-
-	// Restore overflow when popup is removed
-	var observer = new MutationObserver((mutations) => {
-		if (!document.body.contains(popup)) {
-			rowElement.classList.remove("popup-active");
-			observer.disconnect();
-		}
-	});
-	observer.observe(document.body, { childList: true, subtree: true });
-
-	return popup;
-};
-
-
-
-
-
-// Tabulator: Columns Formatters ##############################################################################################
-
-// --------------------------------------------------------
-function FormatterLink(cell, params, onRendered) {
-	let		url		= params.url !=null ? params.url : cell.getValue();
-	const	field	= cell.getField();
-	const	row		= cell.getRow().getData();
-	
-	let 	device	=' ('+row.brand+' '+row.model+')';
-	if(params.short){
-		device='';
-	}
-
-	//specific Links
-	if(field=='devicepage'){
-		url= url ? toh_urls.www + url.replace(/:/g,'/') : '';
-	}
-	else if(field=='VIRT_hwdata'){
-		const devid=cell.getRow().getData().deviceid;
-		url= devid ? _maketHwDataUrl(devid) : '';
-	}
-	else if(field=='VIRT_firm' && !params.recursive){
-		const id		= _makeFirmwareProfileId(row.deviceid);
-		const target	= row.target + '/' + row.subtarget;
-		if(!toh_firmwares_fetched){
-			//return '<a href="#" title="Failed to fetch firmwares"><i class="fa-solid fa-warning dlerror"></i></a>';
-			params.recursive=true;
-			params.ttip="Failed to fetch firmwares";
-			params.icon="fa-solid fa-warning dlerror";
-			params.url='#';
-			params.short=true;
-			return FormatterLink(cell,params,onRendered);
-		}
-		url 		= GetFirmwareSelectUrl(id, target);
-	}
-
-
-	if (url && url.length > 0) {
-		const prefix= params.prefix !=null ? params.prefix : '';
-		const ttip = params.ttip !=null ? params.ttip+device : '';
-		const label= params.label !=null ? params.label : '';
-		const icon = params.icon !=null ? '<i class="fa-fw '+params.icon+'"></i> ' : '';
-		return '<a href="' + prefix+url + '" target="_blank" title="'+ttip+'" class="tlink '+field+'">' + icon + label + '</a>'
-	} 
-	return '';
-}
-
-// --------------------------------------------------------
-function FormatterLinkCommit(cell, params={}, onRendered) {
-	const value = cell.getValue();
-	if (value && value.length > 0) {
-		var html ='';
-		const label=params.label;
-		const commit=value.replace(/.*?;h=/g,'');
-
-		params.icon='fa-solid fa-code-commit';
-		params.ttip='Origin Commit';
-		if(label){params.label=params.ttip;}
-		params.ttip +=" "+commit;
-		params.url=value;
-		html +=FormatterLink(cell, params, onRendered);
-
-		html +="<span class='toh-spacer'></span>";
-
-		params.icon='fa-brands fa-github';
-		params.ttip='Github Commit';
-		if(label){params.label=params.ttip;}
-		params.ttip +=" "+commit;
-		params.url=toh_urls.github_commit + commit;
-		html +=FormatterLink(cell, params, onRendered);
-
-		return html;
-	} 
-	return '';
-}
-
-
-// --------------------------------------------------------
-function FormatterEditHwData(cell, formatterParams, onRendered) {
-	var value = cell.getRow().getData().deviceid;
-	var title = "Edit " + cell.getRow().getData().model;
-	if (value && value.length > 0) {
-		return '<a href="' + _maketHwDataUrl(value)  + '" target="_blank" title="'+title+'"><i class="fa-solid fa-pencil"></i></a>';
-	} 
-	return value;
-}
-
-// --------------------------------------------------------
-function isGenerigImage(url){
-	var tmp;
-	if (typeof url === "string"){
-		tmp=url;
-	}
-	else if(Array.isArray(url) && url.length > 0){
-		tmp=url[0];
-	}
-	else{
-		return false;
-	}
-
-	if(tmp.match(/genericrouter1.png$/)){
-		return true;
-	}
-	return false;
-}
-
-
-// --------------------------------------------------------
-function FormatterImages(cell, formatterParams, onRendered) {
-	var arr = cell.getValue();
-	var url='';
-	var urls=[];
-	var generic=false;
-	if (Array.isArray(arr) && arr.length > 0) {
-		arr.forEach((value, index) => {
-			if(value.match(/^http/)){
-				url=value;
-			}
-			else{
-				value=value.replace(/:/g,'/');
-				url=toh_urls.media + value;
-			}
-			if(isGenerigImage(value)){
-				generic=true;
-				return;
-			}
-			urls.push(url);
-
-			// preload images --------
-			//const img = new Image();
-			//img.src = url;
-
-			if (!toh_img_urls.includes(url)) {
-				toh_img_urls.push(url);
-			}
-
-		});
-
-		if(urls.length == 0){
-			// this device has no photo, only the shared placeholder drawing.
-			// Marking it is useful, offering it to open is not, so this is not
-			// a link: there is nothing to preview and nothing worth opening.
-			if(generic){
-				return '<span class="cell-image generic" title="No picture for this device"><i class="fa-fw fa-regular fa-image"></i></span> ';
-			}
-			return arr;
-		}
-
-		// A handful of devices carry up to six pictures, and one icon each
-		// overflowed the column. One icon stands for the whole set instead, with
-		// the count on it, and the lightbox pages through them.
-		var out='<a href="' + urls[0] + '" target="_blank" class="cell-image"';
-		out +=' data-images="' + urls.join(' ') + '"';
-		out +=' title="' + (urls.length > 1 ? urls.length + ' pictures' : 'Picture') + '">';
-		out +='<i class="fa-fw fa-solid fa-image"></i>';
-		if(urls.length > 1){
-			out +='<span class="cell-image-count">' + urls.length + '</span>';
-		}
-		out +='</a> ';
-		return out;
-	}
-	return arr;
-}
-
-// --------------------------------------------------------
-function FormatterCleanEmpty(cell, formatterParams, onRendered) {
-	var value = cell.getValue();
-	if (value && value.length > 0) {
-		value=value.replace(/-/g,'');
-		return value;
-	} 
-	return "";
-}
-
-// --------------------------------------------------------
-function FormatterCleanWords(cell, formatterParams, onRendered) {
-	var value = cell.getValue();
-	if (value && value.length > 0) {
-		value=value.replace(/more than/g,'&gt;'); // for GPIOs
-		value=value.replace(/Qualcomm Atheros/g,'Atheros'); //  for CPU
-		return value;
-	} 
-	return "";
-}
-
-// --------------------------------------------------------
-function FormatterArray(cell, formatterParams, onRendered) {
-	var arr = cell.getValue();
-	var out='';
-	var done=false;
-	if (Array.isArray(arr) && arr.length > 0) {
-		arr.forEach((value, index) => {
-			value=value.replace(/NAND/g,' NAND'); // for Flash
-			value=value.replace(/Qualcomm Atheros/g,'Atheros'); // for WLAN Hardware
-			if(done){
-				out +=" + ";
-			}
-			out +=value;
-			done=true;
-		});
-		return out;
-	}
-	return arr;
-}
-// --------------------------------------------------------
-function FormatterYesNo(cell, formatterParams, onRendered) {
-	var value = cell.getValue();
-	var icon;
-	if (typeof value === "string") {
-		value=value.toLowerCase().trim();
-	}
-	// an unfilled field comes back as null, which is the 'empty' case and not the
-	// 'something odd is in here' one: two thirds of the JTAG column is null
-	else if(value === null || value === undefined){
-		value='';
-	}
-	if(value=='yes'){
-		icon='fa-solid fa-check toh-mark-yes';
-	}
-	else if(value=='no'){
-		icon='fa-solid fa-xmark toh-mark-no';
-	}
-	else if(value=='-'){
-		icon='fa-solid fa-question toh-mark-unknown dash';
-	}
-	else if(value==''){
-		icon='fa-solid fa-question toh-mark-unknown empty';
-	}
-	else{
-		icon='fa-solid fa-question toh-mark-unknown unknown';
-	}
-	return '<i class="'+icon+'"></i>';
-}
-
-
-
-
-
-// Tabulator: header Filters ##################################################################################################
-
-// Defines the custom HeaderFilter for the "flashmb" column ----------------------------
-function HeaderFilterFlash(cell, onRendered, success, cancel, editorParams){
-	var container = document.createElement("span");
-
-	//create and style inputs
-	var minimum = document.createElement("input");
-	minimum.setAttribute("type", "text");
-	minimum.style.padding	= "4px";
-	minimum.style.width		= "50%";
-	minimum.style.boxSizing = "border-box";
-	var search=minimum.cloneNode();
-	
-	minimum.setAttribute("placeholder", "Minimum");
-	search.setAttribute("placeholder", "Search");
-
-	minimum.value = cell.getValue();
-	search.value = cell.getValue();
-
-	function buildValues(){
-		success({
-			minimum:	minimum.value,
-			search:		search.value,
-		});
-		if(minimum.value=='' && search.value==''){
-			console.log('gotcha')
-			// this fixes the Tabulator Bug, who never fires the 'dataFiltered' event when emptying the field
-			tabuTable.setHeaderFilterValue('flashmb',null);
-		}	
-	}
-
-	// events ---
-	minimum.addEventListener("change",	buildValues);
-	minimum.addEventListener("blur", 	buildValues);
-	minimum.addEventListener("keyup",	buildValues); // for empty
-	//minimum.addEventListener("input",	buildValues); // for empty
-	search.addEventListener("change",	buildValues);
-	search.addEventListener("blur",		buildValues);
-	search.addEventListener("keyup",	buildValues); // for empty
-
-	container.appendChild(minimum);
-	container.appendChild(search);
-	
-	return container;
- }
-
-// Handle custom HeaderFilter's logic for the 'flashmb' colum ---------------------------------------------
-function HeaderFilterFuncFlash(headerValue, rowValue, rowData, filterParams){
-	var b_minimum=true;
-	var b_search=true;
-	//console.log('val='+rowValue);
-	var m;
-	if(headerValue =='' || headerValue==null || headerValue == undefined){
-		return true;
-	}
-	
-	if(headerValue.minimum != ""){
-		b_minimum =  _getFlashArrayBestValue(rowValue) >= headerValue.minimum;
-	}
-	if(headerValue.search != ""){
-		//console.log('---row='+rowValue);
-		b_search=false;
-		if(Array.isArray(rowValue)){
-			var reg		= new RegExp(headerValue.search,'i');
-			for (const v of rowValue) {
-				if(v !=null){
-					//console.log('v='+v);
-					m=reg.test(v);
-					console.log(m);
-					if(m){
-						b_search=true;
-						break;	
-					}
-				}
-			};
-		}
-	}
-	return b_minimum && b_search; //must return a boolean, true if it passes the filter.
-}
-
-// Handle custom HeaderFilter's logic for the 'RamMb' colum ---------------------------------------------
-function HeaderFilterFuncRamMb(headerValue, rowValue, rowData, filterParams){
-	//console.log(typeof(rowValue) + rowValue);
-	if(headerValue =='' || headerValue==null || headerValue == undefined){
-		return true;
-	}
-	var val=_getCleanNumber(rowValue,'ram');
-	if(val ==''){
-		return true;
-	}
-
-	// if we have something else than number, consider true;
-	if(String(val).match(/[^\d]+/g)){
-		return true;
-	}
-
-	return Number(val) >= Number(headerValue);
-}
-
-
-
-
-
-// Tabulator: sorts ###########################################################################################################
-
-// custom sorter for the 'flashmb' column----------------------------------------------
-function SorterFlash(a, b, aRow, bRow, column, dir, sorterParams){
-	var aa=_getFlashArrayBestValue(a);
-	var bb=_getFlashArrayBestValue(b);
-	return aa - bb;
-}
-
-// custom sorter for the 'RamMb' column----------------------------------------------
-function SorterRam(a, b, aRow, bRow, column, dir, sorterParams){
-	var aa=_getCleanNumber(a,'ram');
-	var bb=_getCleanNumber(b,'ram');
-	return Number(aa) - Number(bb);
-}
-
-
-
-
-
-// Tabulator: helpers #########################################################################################################
-
-// ---------------------------------------------------------------------------------------
-// function cellDebug(e, cell){
-// 	console.log(cell);
-// 	console.log(cell._cell.value);
-// }
-
-// --------------------------------------------------------
-function _maketHwDataUrl(deviceid){
-	// a brand holding a slash spans several namespaces, so a deviceid can carry more than one colon:
-	// 'evaluation_boards:unbranded_boards:evaluation_boards_unbranded_boards_qualcomm_ap143_8m'
-	return toh_urls.hwdata + deviceid.replace(/:/g,'/');
-}
-
-// turn a deviceid into a firmware-selector profile id ----
-// 'avm:avm_fritzbox_4040' -> 'avm_fritzbox-4040'
-function _makeFirmwareProfileId(deviceid){
-	const parts	= deviceid.split(":");
-	const brand	= parts.slice(0,-1).join('_');	// the brand may span several namespaces
-	var model	= parts[parts.length-1];
-	if(model.startsWith(brand+'_')){				// the page name usually repeats the brand
-		model	= model.slice(brand.length+1);
-	}
-	return brand + '_' + model.replace(/_/g,'-');
-}
-
-// get the best value to use in sort/filter of the 'flashmb' column ----------------------
-function _getFlashArrayBestValue(arr){
-	// ignore these, just in case (because JS is SOOOOOOO sensitive)
-	if(arr == null){
-		return '';
-	}
-	if( typeof(arr) !="object" ){
-		return arr;
-	}
-
-	var target=0;	
-	// now we can walk into the array of values, without throwing a fatal error (did I ever said I love JS ?) .....
-	arr.forEach((v) => {
-		// 'microSD' or 'SD' means(?) we have Gigas available, so we rank as 128G
-		if(v.match(/microsd/i) || v.match(/^SD$/)){
-			//console.log('SD found in :'+v);
-			v=128*1024;
-		}
-		// eMMC size is unknown, but if it is alone, it maybe(?) means at least 1M(?)
-		else if(v.match(/eMMC/i) && arr.length==1){
-			v=1;
-		}
-		// else we bet on the higher array.member value. (We only keep the number, ignoring letters)
-		else{
-			v=v.replace(/[^\d]+/g,'');
-			v=Number(v);
-		}
-		// target is the highest found value
-		if(v > target){
-			target=v;
-		}
-	});
-	return target;
-}
-
-// create the 'flash>=' filter operator ----------------------------------------------
-Tabulator.extendModule("filter", "filters", {
-	"flash>=":function(filtValue, rowValue, rowData, filterParams){
-		//console.log('-----');
-		//console.log('filtValue='+filtValue+'	| rowValue='+rowValue);
-		return _getFlashArrayBestValue(rowValue) >= filtValue ? true : false;
-	}
-});
-
-
-// get a clean number from a string column----------------------------------------------
-function _getCleanNumber(rowValue,type=''){
-	if(rowValue ==null){
-		return '';
-	}
-	rowValue=rowValue.trim();
-	if(rowValue==''){
-		return '';
-	}
-
-	// if we have a sring like "64, 128, 256",  we keep the max
-	if(rowValue.match(/,/i)){
-		rowValue= rowValue.replace(/ /g,'');
-		const numbers = rowValue.split(',').map(Number);
-  		rowValue= Math.max(...numbers);
-	}
-
-	// specific to Ram column
-	if(type=='ram'){
-		if(String(rowValue).match(/[^\d]+/g)){
-			//remove letter at start
-			rowValue=rowValue.replace(/.*?(\d+)/g,'$1');
-			// do we have GB ?
-			if(rowValue.match(/[\d]+\s*GB/i)){
-				rowValue=rowValue.replace(/[^\d]+/g,'');
-				rowValue=Number(rowValue) * 1024 +1; //we add 1 to be sorted , ie for 4GB, just after 4096
-			}
-		}
-	}
-
-	// if we have letters, dont cast to number
-	if(String(rowValue).match(/[^\d]+/g)){
-		return rowValue;
-	}
-	else{
-		return Number(rowValue);
-	}
-}
-
-

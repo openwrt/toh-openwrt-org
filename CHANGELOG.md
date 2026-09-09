@@ -1,9 +1,28 @@
 # CHANGELOG
 
 
-## Version 1.81 - 2026-xx-xx
-* modernize UI with contemporary design (WIP...)
-
+## Version 1.82 - 2026-xx-xx (unreleased)
+* Complete redesign, built around finding a device
+* Responsive: desktop table, tablet preset, phone card list
+* Added side-by-side compare, with photos and full details
+* Added favourites, collections and a "Help me choose" configurator
+* Added chipset, target, manufacturer and statistics pages
+* Added advanced search; one box matches brand and model
+* Downloads name the OpenWrt release they hand out
+* Flags devices with parts OpenWrt cannot drive
+* Added light/dark theme and a Comfortable/Compact row switch
+* Sticky bar keeps search, filters and result count in view
+* Removed FontAwesome, Bootstrap and the unused XLSX library
+* Much faster first load: scripts are discoverable again, the device list
+  starts immediately, and the columns are built once instead of twice
+* Works on foldables and on phones down to 320px; the table no longer comes
+  back empty after unfolding, and the card pager stays on screen
+* Search reacts to predictive text, dictation and paste
+* A failed or rate-limited device list now says so and offers a retry
+* Wiki data is escaped everywhere it reaches the page, and link schemes are
+  checked
+* Shared ?device= links open the device wherever it is in the table
+* Added a Playwright regression suite (npm install && npm test)
 
 ## Version 1.80 - 2026-07-27
 
